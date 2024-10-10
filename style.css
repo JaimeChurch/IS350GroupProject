@@ -1,0 +1,203 @@
+/* Body formatting*/
+html {
+    height: 100%;
+}
+
+body {
+    background-image:
+        linear-gradient(-45deg, #aec3b0 20%, #598392 100%);
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 110%;
+    height: 100%;
+    color: #01161e;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    margin: 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Nav section formatting*/
+
+nav ul {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    list-style-type: none;
+    padding: 0 20px;
+}
+
+
+nav ul a {
+    text-decoration: none;
+    color: #01161e;
+    text-shadow: 3px 3px 2px #598392;
+    padding: .5em;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 220%;
+    font-weight: bold;
+}
+
+nav ul a:hover {
+    box-shadow: 0 0 10px 0 #AEC3B0 inset, 0 0 10px 10px #AEC3B0;
+    border: 5px solid #AEC3B0;
+    border-radius: 15px;
+}
+
+/* Header formatting*/
+header {
+    display: flex;
+    padding-top: 20px;
+    align-items: last baseline;
+}
+
+h1 {
+    font-family: 'Bebas Neue', cursive;
+    color: #01161e;
+    text-shadow: 3px 3px 2px #598392;
+    font-size: 275%;
+    padding-left: 10px;
+}
+
+.logo {
+    box-shadow: 3px 3px 2px #598392;
+    max-height: 120px;
+    border-radius: 10px;
+}
+
+/* Main formatting*/
+main p {
+    text-indent: 2em;
+    line-height: 1.25em;
+}
+
+#music {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#music figcaption {
+    padding-bottom: 5px;
+}
+
+/* Images formatting*/
+.gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.gallery img {
+    max-height: 400px;
+    padding: 7px;
+    object-fit: cover;
+    overflow: auto;
+}
+
+.wrapper {
+    position: relative;
+}
+
+.imgDescription {
+    position: absolute;
+    top: 10%;
+    left: 0;
+    font-size: x-large;
+    font-weight: bold;
+    color: #01161e;
+    visibility: hidden;
+}
+
+.gallery img:hover~.imgDescription {
+    visibility: visible;
+    transition: .5s ease;
+}
+
+
+.gallery img:hover {
+    max-height: 410px;
+    opacity: 0.5;
+    filter: grayscale(.8);
+    transition: .5s ease;
+}
+
+.PSgallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.PSgallery img {
+    max-height: 400px;
+    padding: 7px;
+    overflow: auto;
+}
+
+
+/* Footer formatting*/
+footer {
+    font-size: 75%;
+    align-self: center;
+    text-align: center;
+    margin: 20px 0px 10px 0px;
+}
+
+/*Media Queries*/
+@media (min-width: 2667px) {
+    .PHreturn {
+        display: none;
+    }
+}
+
+@media (min-width: 1078px) {
+    .PSreturn {
+        display: none;
+    }
+
+}
+
+@media (min-width: 768px) {
+    .indexReturn {
+        display: none;
+    }
+}
+
+@media (max-width: 820px) {
+    nav ul {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 0px;
+    }
+
+    nav li {
+        padding-bottom: 30px;
+        font-size: 80%;
+    }
+
+    .lastNav {
+        padding-bottom: 0px;
+    }
+
+    h1 {
+        font-size: 180%;
+        padding-left: 10px;
+    }
+
+    .logo {
+        max-height: 80px;
+    }
+
+    header {
+        padding-top: 0px;
+        align-self: center;
+    }
+
+    .gallery img {
+        max-width: 100%;
+        padding: 7px;
+    }
+
+}
