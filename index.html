@@ -13,38 +13,54 @@
 </head>
 
 <body>
-    <!--Navigation Bar-->
+    <!--Hamburger Menu and Navbar-->
     <nav>
-        <ul>
+        <div class="menu-icon">
+            <i class="fas fa-bars"></i>
+        </div>
+        <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
-            <li><a href="html/photography.html">Browse by Genre</a></li>
-            <li class="lastNav"> <a class="nc" href="html/music.html">Browse All</a></li>
+            <li><a href="#">All Games</a></li>
+            <li><a class="nc" href="html/music.html">Browse By Genre</a></li>
         </ul>
     </nav>
 
-    <!--Logo and Title-->
+    <!--Title-->
     <header>
-        <h1>Retro Game Corp</h1>
+        <h1><a href="index.html">Retro Game Corp</a></h1>
     </header>
 
-    <!--About Me-->
+    <!--About us-->
     <main>
         <h2>Space Blaster 3000:
             <i class="fa-solid fa-computer"></i>
         </h2>
 
-        <p> Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore nulla nihil minus nesciunt at deleniti, assumenda tempora cum ut quas repellendus voluptatum harum ipsam soluta. Asperiores repellendus veritatis qui deserunt.
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Iusto quis iure obcaecati pariatur, fugit corrupti expedita, voluptas cupiditate culpa voluptate vitae distinctio consequatur ab. Amet voluptas quaerat minima voluptates cumque.
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolor assumenda quisquam architecto minima iusto nemo fuga neque similique mollitia odio, ad, tempora doloremque incidunt. Neque doloribus minima ad ex aut!
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore nulla nihil minus nesciunt at deleniti,
+            assumenda tempora cum ut quas repellendus voluptatum harum ipsam soluta. Asperiores repellendus veritatis
+            qui deserunt.
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Iusto quis iure obcaecati pariatur, fugit corrupti
+            expedita, voluptas cupiditate culpa voluptate vitae distinctio consequatur ab. Amet voluptas quaerat minima
+            voluptates cumque.
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolor assumenda quisquam architecto minima iusto
+            nemo fuga neque similique mollitia odio, ad, tempora doloremque incidunt. Neque doloribus minima ad ex aut!
         </p>
     </main>
 
     <!--Footer-->
     <footer>
-        <p class="indexReturn"><a href="#">Return to top.</a></p>
-        &#169; ThriftyElk 2023
+        &#169; NoCookiesAllowed 2024
     </footer>
 
-</body>
+    <script>
+        // Toggle menu visibility
+        const menuIcon = document.querySelector('.menu-icon');
+        const navLinks = document.querySelector('.nav-links');
 
+        menuIcon.addEventListener('click', () => {
+            navLinks.classList.toggle('active'); // This toggles the 'active' class
+        });
+    </script>
+
+</body>
 </html>
