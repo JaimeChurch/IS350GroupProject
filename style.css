@@ -1,6 +1,24 @@
-/* Body formatting */
 html {
     height: 100%;
+}
+
+/* Header formatting */
+header {
+    display: flex;
+    padding-top: 20px;
+    align-items: last baseline;
+}
+
+h1 {
+    font-family: 'Bebas Neue', cursive;
+    color: #01161e;
+    text-shadow: 2px 2px 2px #598392;
+    font-size: 275%;
+}
+
+h1 a {
+    text-decoration: none;
+    color: inherit;
 }
 
 body {
@@ -16,7 +34,7 @@ body {
     flex-direction: column;
 }
 
-/* Hamburger menu styling */
+/* Hamburger menu */
 .menu-icon {
     display: none; /* Hidden by default for large screens */
     font-size: 2rem;
@@ -24,9 +42,9 @@ body {
     color: #01161e;
 }
 
-/* Nav section formatting */
+/* Nav section */
 nav {
-    position: relative; /* Define positioning for absolute children */
+    position: relative;
 }
 
 nav ul {
@@ -35,13 +53,12 @@ nav ul {
     align-items: center;
     list-style-type: none;
     padding: 0 20px;
-    transition: max-height 0.3s ease; /* Smooth transition for menu */
 }
 
 nav ul a {
     text-decoration: none;
     color: #01161e;
-    text-shadow: 3px 3px 2px #598392;
+    text-shadow: 2px 2px 2px #598392;
     padding: .2em;
     font-family: 'Bebas Neue', cursive;
     font-size: 220%;
@@ -49,9 +66,32 @@ nav ul a {
 }
 
 nav ul a:hover {
-    box-shadow: 0 0 10px 0 #AEC3B0 inset, 0 0 10px 1px #AEC3B0;
-    border: 5px solid #AEC3B0;
-    border-radius: 20px;
+    box-shadow: 0 0 15px 0 #AEC3B0 inset, 0 0 10px 1px #AEC3B0;
+    border: 4px solid #AEC3B0;
+    border-radius: 15px;
+}
+
+/* Main formatting */
+main p {
+    line-height: 1.15em;
+}
+
+.placeholder {
+    width: 90%;
+    height: 400px;
+    background-color: black;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+    margin: auto;
+}
+
+/* Footer formatting */
+footer {
+    font-size: 75%;
+    align-self: center;
+    text-align: center;
+    margin: 20px 0px 10px 0px;
+    color: #01161e;
 }
 
 /* Media Queries for Small Screens */
@@ -62,75 +102,35 @@ nav ul a:hover {
 
     nav ul {
         display: none; /* Hide navbar on mobile by default */
+        font-size: 85%;
         position: absolute;
-        top: 100%;
-        left: 0;
-        flex-direction: column; /* Stack the nav links vertically */
-        background-color: rgba(255, 255, 255, 0.9); /* Background color behind the links */
-        text-align: left; /* Align text to the left */
-        padding: 0; /* Remove padding around the ul */
-        width: auto; /* Allow the width to be only as wide as the content */
-        z-index: 1; /* Ensure the menu appears above other elements */
+        flex-direction: column;
+        background-image: linear-gradient(-45deg, #598392 20%, #aec3b0 100%);
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+        padding: 0;
+        width: auto;
+        z-index: 1;
     }
 
     nav ul.active {
-        display: flex !important; /* Show navbar when the menu is pressed */
+        display: flex; /* Displays navbar when active is toggled */
     }
 
     nav ul li {
-        padding: 10px 20px; /* Add padding for spacing around links */
-        border-bottom: 1px solid #598392; /* Separator between nav items */
-    }
-
-    nav ul li:last-child {
-        border-bottom: none; /* Remove last border */
+        padding: 15px 20px;
     }
 
     /* Center the H1 when the menu is active */
     header {
         display: flex;
-        justify-content: center; /* Center align header content */
-        position: relative; /* Keep header relative for positioning */
-        margin-top: 20px; /* Add some margin for spacing */
+        justify-content: center;
+        position: relative;
     }
 
     h1 {
-        text-align: center; /* Center the text */
-        width: 100%; /* Take full width */
-        margin: 0; /* Reset margin */
+        text-align: center;
+        width: 100%;
+        margin: 0;
     }
-}
-
-/* Header formatting */
-header {
-    display: flex;
-    padding-top: 20px;
-    align-items: last baseline;
-}
-
-h1 {
-    font-family: 'Bebas Neue', cursive;
-    color: #01161e;
-    text-shadow: 3px 3px 2px #598392;
-    font-size: 275%;
-}
-
-h1 a {
-    text-decoration: none;
-    color: inherit;
-}
-
-/* Main formatting */
-main p {
-    text-indent: 2em;
-    line-height: 1.25em;
-}
-
-/* Footer formatting */
-footer {
-    font-size: 75%;
-    align-self: center;
-    text-align: center;
-    margin: 20px 0px 10px 0px;
-    color: #01161e;
 }
