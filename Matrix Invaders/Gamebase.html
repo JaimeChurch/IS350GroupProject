@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Invaders</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #gameContainer {
+            position: relative;
+            width: 1024px; 
+            height: 768px; 
+            border: 3px solid #00ff00; 
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            overflow: hidden; 
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #matrixCanvas {
+            z-index: 0; 
+        }
+        #gameCanvas {
+            z-index: 1; 
+        }
+        #score, #ships, #level {
+            position: absolute;
+            color: #00ff00; 
+            font-size: 24px; 
+            z-index: 2;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #score { top: 10px; right: 10px; }
+        #ships { top: 50px; right: 10px; }
+        #level { top: 10px; left: 10px; }
+        #startScreen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            flex-direction: column;
+            z-index: 3;
+        }
+        #startScreen h1 {
+            font-size: 70px;
+            color: #00ff00;
+            text-shadow: 0px 0px 10px lime, 0px 0px 20px green;
+        }
+        #gameOverMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff0000;
+            font-size: 50px;
+            display: none;
+            animation: pulse 2s infinite, colorChange 5s infinite;
+            z-index: 4;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.7; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        #controls {
+            font-size: 20px;
+            color: #00ffcc;
+            margin-top: 20px;
+        }
+
+        /* Shield bar styling */
+        #shieldBarContainer {
+            position: absolute;
+            bottom: 40px; 
+            left: 10px; 
+            width: 200px; 
+            border: 2px solid #00ffcc; /* Border around shield status bar */
+            padding: 5px;
+            background-color: rgba(0, 0, 0, 0.7);
+            text-align: center;
+            color: #00ffcc;
+        }
+
+        #shieldBar {
+            width: 100%;
+            height: 20px; 
+            display: flex; /* Use flex to align hits properly */
+            position: relative;
+        }
+
+        .hit {
+            height: 20px;
+            background-color: #00ff00; /* Color for remaining hits */
+            flex: 1; /* Each hit takes equal space */
+        }
+
+        .hit-divider {
+            width: 2px; /* Divider width */
+            background-color: #00ffcc; /* Divider color */
+            height: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="matrixCanvas" width="1024" height="768"></canvas> 
+        <canvas id="gameCanvas" width="1024" height="768"></canvas> 
+        <div id="score">Score: 0</div>
+        <div id="ships">Ships: 3</div>
+        <div id="level">Level: 1</div>
+        <div id="startScreen">
+            <h1>MATRIX INVADERS</h1>
+            <p>Press ENTER to Start</p>
+            <div id="controls">
+                Controls:<br>
+                Arrow Keys: Move<br>
+                Space: Fire<br>
+                S: Activate Shield
+            </div>
+        </div>
+        <div id="gameOverMessage">YOU ARE DEAD!</div>
+        <div id="shieldBarContainer"> <!-- Shield bar container -->
+            <div>SHIELD</div> <!-- Label for shield -->
+            <div id="shieldBar"></div> <!-- Shield bar element -->
+        </div>
+    </div>
+
+    <script>
+        const gameCanvas = document.getElementById('gameCanvas');
+        const ctx = gameCanvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const shipsElement = document.getElementById('ships');
+        const levelElement = document.getElementById('level');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        const shieldBar = document.getElementById('shieldBar'); // Get shield bar element
+
+        const matrixCanvas = document.getElementById('matrixCanvas');
+        const matrixCtx = matrixCanvas.getContext('2d');
+
+        let invaders = [], bullets = [], invaderBullets = [], debris = [];
+        let player = { x: 370, y: 550, width: 50, height: 30, alive: true, shieldActive: false, shieldHits: 3 };
+        let leftKey = false, rightKey = false, upKey = false, downKey = false;
+        let spaceKey = false, canShoot = true, score = 0, ships = 3, level = 1, gameOver = false;
+        let speedMultiplier = 1;
+        let matrixSpeed = 0.2; 
+        const matrixColors = ['#00ff00', '#00ffcc', '#66ff66', '#ccff00', '#00ccff', '#ff00cc', '#ffcc00', '#ff3300', '#00cc00', '#6600ff'];
+        let currentColorIndex = 0; 
+
+        const matrixCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const matrixFontSize = 10; 
+        const matrixColumns = Math.floor(matrixCanvas.width / matrixFontSize);
+        const matrixDrops = Array(matrixColumns).fill(0);
+
+        function drawMatrix() {
+    // Darken the background with a slight opacity to create the trailing effect
+    matrixCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+    
+    // Set the matrix text color to the signature green shade
+    matrixCtx.fillStyle = '#00ff00';
+    matrixCtx.font = `${matrixFontSize}px monospace`; // Use monospace font for better effect
+    
+    // Loop over each column
+    for (let x = 0; x < matrixColumns; x++) {
+        const text = matrixCharacters.charAt(Math.floor(Math.random() * matrixCharacters.length));
+        // Draw the text character at the specified x and y position
+        matrixCtx.fillText(text, x * matrixFontSize, matrixDrops[x] * matrixFontSize);
+
+        // Randomly reset the drop back to the top after it passes the screen
+        if (matrixDrops[x] * matrixFontSize > matrixCanvas.height && Math.random() > 0.975) {
+            matrixDrops[x] = 0;
+        }
+
+        // Increment the y position for the next frame to create the falling effect
+        matrixDrops[x] += matrixSpeed;
+    }
+}
+
+
+        function changeMatrixColor() {
+            currentColorIndex = (currentColorIndex + 1) % matrixColors.length;
+        }
+        setInterval(changeMatrixColor, 5000); 
+
+        function createInvaders() {
+            invaders = [];
+            const basePoints = 5;
+            const pointIncrement = 3;
+
+            for (let i = 0; i < 4; i++) {
+                const rowPoints = basePoints + (i * pointIncrement);
+                let staggerOffset = Math.random() * 30;
+                for (let j = 0; j < 10; j++) {
+                    let invaderType = j % 4; 
+                    let color = `hsl(${Math.random() * 360}, 100%, 50%)`; 
+                    let eyeColor = 'red'; 
+
+                    // Different shapes for aliens
+                    const shapeType = Math.floor(Math.random() * 4);
+                    let width, height;
+
+                    if (shapeType === 0) { // Circle
+                        width = height = 40;
+                    } else if (shapeType === 1) { // Triangle
+                        width = 40;
+                        height = 40;
+                    } else if (shapeType === 2) { // Square
+                        width = height = 40;
+                    } else { // Diamond
+                        width = height = 40;
+                    }
+
+                    invaders.push({
+                        x: j * 60 + 50 + staggerOffset,
+                        y: i * 50 + 20,
+                        width: width,
+                        height: height,
+                        color: color,
+                        type: shapeType,
+                        alive: true,
+                        explosionTime: 0,
+                        points: rowPoints,
+                        eyeColor: eyeColor,
+                    });
+                }
+            }
+        }
+
+        function drawPlayer() {
+            if (player.alive) {
+                ctx.fillStyle = '#00ffcc';  
+                ctx.beginPath();
+                ctx.moveTo(player.x + player.width / 2, player.y);
+                ctx.lineTo(player.x, player.y + player.height);
+                ctx.lineTo(player.x + player.width, player.y + player.height);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Draw shield if active
+                if (player.shieldActive) {
+                    ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+                    ctx.beginPath();
+                    ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 40, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = '#007f7f';  
+                ctx.fillRect(player.x - 10, player.y + player.height - 10, 10, 20);
+                ctx.fillRect(player.x + player.width, player.y + player.height - 10, 10, 20);
+            } else if (player.explosionTime > 0) {
+                drawExplosion(player.x + player.width / 2, player.y + player.height / 2);
+                player.explosionTime--;
+            }
+        }
+
+        function drawInvaders() {
+            invaders.forEach(invader => {
+                if (invader.alive) {
+                    ctx.fillStyle = invader.color;
+                    if (invader.type === 0) { // Circle
+                        ctx.beginPath();
+                        ctx.arc(invader.x + invader.width / 2, invader.y + invader.height / 2, invader.width / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (invader.type === 1) { // Triangle
+                        ctx.beginPath();
+                        ctx.moveTo(invader.x + invader.width / 2, invader.y);
+                        ctx.lineTo(invader.x, invader.y + invader.height);
+                        ctx.lineTo(invader.x + invader.width, invader.y + invader.height);
+                        ctx.closePath();
+                        ctx.fill();
+                    } else if (invader.type === 2) { // Square
+                        ctx.fillRect(invader.x, invader.y, invader.width, invader.height);
+                    } else { // Diamond
+                        ctx.beginPath();
+                        ctx.moveTo(invader.x + invader.width / 2, invader.y);
+                        ctx.lineTo(invader.x + invader.width, invader.y + invader.height / 2);
+                        ctx.lineTo(invader.x + invader.width / 2, invader.y + invader.height);
+                        ctx.lineTo(invader.x, invader.y + invader.height / 2);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+
+                    // Draw tentacles
+                    ctx.strokeStyle = 'red';
+                    ctx.lineWidth = 3;
+                    for (let k = 0; k < 3; k++) {
+                        ctx.beginPath();
+                        ctx.moveTo(invader.x + invader.width / 2, invader.y + invader.height);
+                        ctx.lineTo(invader.x + invader.width / 2 + (Math.random() * 20 - 10), invader.y + invader.height + (Math.random() * 20));
+                        ctx.stroke();
+                    }
+                    
+                    // Draw eyes
+                    ctx.fillStyle = invader.eyeColor;
+                    ctx.beginPath();
+                    ctx.arc(invader.x + invader.width / 2, invader.y + invader.height / 2, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (invader.explosionTime > 0) {
+                    drawExplosion(invader.x + invader.width / 2, invader.y + invader.height / 2);
+                    invader.explosionTime--;
+                }
+            });
+        }
+
+        function drawExplosion(x, y) {
+            ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.arc(x, y, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (Math.random() < 0.1) {
+                debris.push({
+                    x: x,
+                    y: y,
+                    dx: (Math.random() - 0.5) * 8,
+                    dy: (Math.random() - 0.5) * 8,
+                    size: Math.random() * 5 + 2,
+                    color: ['#FF4500', '#FF6347', '#FFA500'][Math.floor(Math.random() * 3)]
+                });
+            }
+        }
+
+        function drawDebris() {
+            debris.forEach((particle, index) => {
+                ctx.fillStyle = particle.color;
+                ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+                particle.x += particle.dx;
+                particle.y += particle.dy;
+
+                if (particle.x < 0 || particle.x > gameCanvas.width || particle.y < 0 || particle.y > gameCanvas.height) {
+                    debris.splice(index, 1);
+                }
+            });
+        }
+
+        function drawPlayerBullet(bullet) {
+            const gradient = ctx.createLinearGradient(bullet.x, bullet.y, bullet.x, bullet.y + bullet.height);
+            gradient.addColorStop(0, '#00ff00');
+            gradient.addColorStop(1, '#ff0000');
+            ctx.fillStyle = gradient;
+
+            ctx.beginPath();
+            ctx.moveTo(bullet.x, bullet.y);
+            ctx.lineTo(bullet.x + bullet.width / 2, bullet.y - bullet.height);
+            ctx.lineTo(bullet.x + bullet.width, bullet.y);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawInvaderBullet(bullet) {
+            const gradient = ctx.createRadialGradient(bullet.x + bullet.width / 2, bullet.y, 0, bullet.x + bullet.width / 2, bullet.y, bullet.width);
+            gradient.addColorStop(0, '#ff1493');
+            gradient.addColorStop(1, '#9400d3');
+            ctx.fillStyle = gradient;
+
+            ctx.beginPath();
+            ctx.arc(bullet.x + bullet.width / 2, bullet.y, bullet.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawBullets() {
+            bullets.forEach(bullet => {
+                drawPlayerBullet(bullet);
+            });
+            invaderBullets.forEach(bullet => {
+                drawInvaderBullet(bullet);
+            });
+        }
+
+        function moveBullets() {
+            bullets.forEach(bullet => bullet.y -= 5);
+            bullets = bullets.filter(bullet => bullet.y > 0);
+
+            invaderBullets.forEach(bullet => bullet.y += 3 * speedMultiplier);
+            invaderBullets = invaderBullets.filter(bullet => bullet.y < gameCanvas.height);
+        }
+
+        let invaderDirection = 1;
+        function moveInvaders() {
+            let shiftDown = false;
+            invaders.forEach(invader => {
+                if (invader.alive) {
+                    invader.x += invaderDirection * speedMultiplier;
+                    if (invader.x > gameCanvas.width - invader.width || invader.x < 0) {
+                        shiftDown = true;
+                    }
+                    if (Math.random() < 0.001 * speedMultiplier) {
+                        invaderBullets.push({ x: invader.x + invader.width / 2 - 2.5, y: invader.y + invader.height, width: 10, height: 10 });
+                    }
+                }
+            });
+
+            if (shiftDown) {
+                invaderDirection *= -1;
+                invaders.forEach(invader => invader.y += 10);
+            }
+        }
+
+        function movePlayer() {
+            if (leftKey && player.x > 0) player.x -= 5;
+            if (rightKey && player.x < gameCanvas.width - player.width) player.x += 5;
+            if (upKey && player.y > 0) player.y -= 5;
+            if (downKey && player.y < gameCanvas.height - player.height) player.y += 5;
+        }
+
+        function shoot() {
+            if (canShoot && player.alive) {
+                bullets.push({
+                    x: player.x + player.width / 2 - 2.5,
+                    y: player.y - 10,
+                    width: 10,
+                    height: 20
+                });
+                canShoot = false;
+                setTimeout(() => canShoot = true, 300);
+            }
+        }
+
+        function checkCollisions() {
+            bullets.forEach((bullet, bulletIndex) => {
+                invaders.forEach((invader, invaderIndex) => {
+                    if (invader.alive &&
+                        bullet.x < invader.x + invader.width &&
+                        bullet.x + bullet.width > invader.x &&
+                        bullet.y < invader.y + invader.height &&
+                        bullet.y + bullet.height > invader.y) {
+                        invader.alive = false;
+                        invader.explosionTime = 20;
+                        bullets.splice(bulletIndex, 1);
+                        score += invader.points;  
+                        scoreElement.textContent = `Score: ${score}`;
+                        shipsElement.textContent = `Ships: ${ships}`; 
+                        levelElement.textContent = `Level: ${level}`;
+                    }
+                });
+            });
+
+            if (invaders.every(invader => !invader.alive)) {
+                speedMultiplier += 0.2;
+                createInvaders();
+                level++; 
+                levelElement.textContent = `Level: ${level}`; 
+            }
+        }
+
+        function checkPlayerHit() {
+            invaderBullets.forEach((bullet, bulletIndex) => {
+                if (player.alive &&
+                    bullet.x < player.x + player.width &&
+                    bullet.x + bullet.width > player.x &&
+                    bullet.y < player.y + player.height &&
+                    bullet.y + bullet.height > player.y) {
+                    
+                    if (!player.shieldActive) {
+                        player.alive = false;
+                        player.explosionTime = 40;
+                        invaderBullets.splice(bulletIndex, 1);
+                        loseLife();
+                    } else {
+                        player.shieldHits--;
+                        invaderBullets.splice(bulletIndex, 1);
+                        if (player.shieldHits <= 0) {
+                            player.shieldActive = false; // Disable shield if hits are exhausted
+                        }
+                    }
+                }
+            });
+        }
+
+        function loseLife() {
+            ships--;
+            scoreElement.textContent = `Score: ${score}`;
+            shipsElement.textContent = `Ships: ${ships}`;
+            if (ships <= 0) {
+                gameOver = true;
+                showGameOverMessage();
+                setTimeout(() => {
+                    location.reload(); // Reload the game to reset everything
+                }, 3000);
+            } else {
+                setTimeout(() => {
+                    player.alive = true;
+                    player.x = 370; 
+                    player.y = 550; 
+                    player.shieldActive = false; // Reset shield status
+                    player.shieldHits = 3; // Reset shield hits
+                    updateShieldBar(); // Update the shield bar
+                }, 1000);
+            }
+        }
+
+        function showGameOverMessage() {
+            gameOverMessage.style.display = 'block';
+            setTimeout(() => {
+                gameOverMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        function restartGame() {
+            ships = 3;
+            score = 0;
+            speedMultiplier = 1; // Reset speed multiplier to initial value
+            player.alive = true;
+            player.shieldActive = false; // Reset shield status
+            player.shieldHits = 3; // Reset shield hits
+            bullets = [];
+            invaderBullets = [];
+            debris = [];
+            leftKey = false;
+            rightKey = false;
+            spaceKey = false;
+            gameOverMessage.style.display = 'none';
+            createInvaders();
+            gameOver = false;
+            scoreElement.textContent = `Score: ${score}`;
+            shipsElement.textContent = `Ships: ${ships}`; 
+            level = 1; // Reset level to 1
+            levelElement.textContent = `Level: ${level}`; 
+            updateShieldBar(); // Update the shield bar
+        }
+
+        function startGame() {
+            gameStarted = true;
+            startScreen.style.display = 'none';
+            scoreElement.style.display = 'block';
+            shipsElement.style.display = 'block';
+            levelElement.style.display = 'block';
+            createInvaders();
+            gameLoop();
+        }
+
+        function showStartScreen(message = "Press ENTER to Start") {
+            gameStarted = false;
+            startScreen.style.display = 'flex';
+            startScreen.querySelector('p').textContent = message;
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Enter' && !gameStarted) {
+                restartGame();
+                startGame();
+            }
+            if (gameStarted) {
+                switch (e.code) {
+                    case 'ArrowLeft': leftKey = true; break;
+                    case 'ArrowRight': rightKey = true; break;
+                    case 'ArrowUp': upKey = true; break;
+                    case 'ArrowDown': downKey = true; break;
+                    case 'Space':
+                        if (!spaceKey && canShoot && player.alive) {
+                            spaceKey = true;
+                            shoot();
+                        }
+                        break;
+                    case 'KeyS': 
+                        if (!player.shieldActive && player.shieldHits > 0) { // Activate shield only if not active
+                            player.shieldActive = true; // Activate shield
+                            updateShieldBar(); // Update the shield bar
+                            setTimeout(() => {
+                                player.shieldActive = false; // Deactivate shield after 3 seconds
+                                updateShieldBar(); // Update shield bar to reflect the state
+                            }, 3000);
+                        }
+                        break;
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (gameStarted) {
+                switch (e.code) {
+                    case 'ArrowLeft': leftKey = false; break;
+                    case 'ArrowRight': rightKey = false; break;
+                    case 'ArrowUp': upKey = false; break;
+                    case 'ArrowDown': downKey = false; break;
+                    case 'Space': spaceKey = false; break;
+                    case 'KeyS': 
+                        // Prevent additional shield activation logic here
+                        break;
+                }
+            }
+        });
+
+        function updateShieldBar() {
+            shieldBar.innerHTML = ''; // Clear existing hits
+            for (let i = 0; i < 3; i++) { // Always create 3 increments
+                const hit = document.createElement('div');
+                hit.className = 'hit';
+                if (i < player.shieldHits) {
+                    hit.style.backgroundColor = '#00ff00'; // Only show green for remaining hits
+                } else {
+                    hit.style.backgroundColor = '#ff0000'; // Show red for used hits
+                }
+                shieldBar.appendChild(hit);
+                if (i < 2) { // Add divider if not the last hit
+                    const divider = document.createElement('div');
+                    divider.className = 'hit-divider';
+                    shieldBar.appendChild(divider);
+                }
+            }
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            drawMatrix();  
+            drawPlayer();
+            movePlayer();
+            drawInvaders();
+            moveInvaders();
+            drawBullets();
+            moveBullets();
+            drawDebris();
+            checkCollisions();
+            checkPlayerHit();
+            updateShieldBar(); // Update the shield bar
+            requestAnimationFrame(gameLoop);
+        }
+
+        createInvaders();
+        showStartScreen();
+    </script>
+</body>
+</html>

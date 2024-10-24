@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Invaders</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #gameContainer {
+            position: relative;
+            width: 1024px; 
+            height: 768px; 
+            border: 3px solid #00ff00; 
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            overflow: hidden; 
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #matrixCanvas {
+            z-index: 0; 
+        }
+        #gameCanvas {
+            z-index: 1; 
+        }
+        #score, #ships, #level {
+            position: absolute;
+            color: #00ff00; 
+            font-size: 24px; 
+            z-index: 2;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #score { top: 10px; right: 10px; }
+        #ships { top: 50px; right: 10px; }
+        #level { top: 10px; left: 10px; }
+        #startScreen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            flex-direction: column;
+            z-index: 3;
+        }
+        #startScreen h1 {
+            font-size: 70px;
+            color: #00ff00;
+            text-shadow: 0px 0px 10px lime, 0px 0px 20px green;
+        }
+        #gameOverMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff0000;
+            font-size: 50px;
+            display: none;
+            animation: pulse 2s infinite, colorChange 5s infinite;
+            z-index: 4;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.7; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        #controls {
+            font-size: 20px;
+            color: #00ffcc;
+            margin-top: 20px;
+        }
+
+        /* Shield bar styling */
+        #shieldBarContainer {
+            position: absolute;
+            bottom: 40px; 
+            left: 10px; 
+            width: 200px; 
+            border: 2px solid #00ffcc; /* Border around shield status bar */
+            padding: 5px;
+            background-color: rgba(0, 0, 0, 0.7);
+            text-align: center;
+            color: #00ffcc;
+        }
+
+        #shieldBar {
+            width: 100%;
+            height: 20px; 
+            display: flex; /* Use flex to align hits properly */
+            position: relative;
+        }
+
+        .hit {
+            height: 20px;
+            background-color: #00ff00; /* Color for remaining hits */
+            flex: 1; /* Each hit takes equal space */
+        }
+
+        .hit-divider {
+            width: 2px; /* Divider width */
+            background-color: #00ffcc; /* Divider color */
+            height: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="matrixCanvas" width="1024" height="768"></canvas> 
+        <canvas id="gameCanvas" width="1024" height="768"></canvas> 
+        <div id="score">Score: 0</div>
+        <div id="ships">Ships: 3</div>
+        <div id="level">Level: 1</div>
+        <div id="startScreen">
+            <h1>MATRIX INVADERS</h1>
+            <p>Press ENTER to Start</p>
+            <div id="controls">
+                Controls:<br>
+                Arrow Keys: Move<br>
+                Space: Fire<br>
+                S: Activate Shield
+            </div>
+        </div>
+        <div id="gameOverMessage">YOU ARE DEAD!</div>
+        <div id="shieldBarContainer"> <!-- Shield bar container -->
+            <div>SHIELD</div> <!-- Label for shield -->
+            <div id="shieldBar"></div> <!-- Shield bar element -->
+        </div>
+    </div>
+
+    <script>
+        const gameCanvas = document.getElementById('gameCanvas');
+        const ctx = gameCanvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const shipsElement = document.getElementById('ships');
+        const levelElement = document.getElementById('level');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        const shieldBar = document.getElementById('shieldBar'); // Get shield bar element
+
+        const matrixCanvas = document.getElementById('matrixCanvas');
+        const matrixCtx = matrixCanvas.getContext('2d');
+
+        let invaders = [], bullets = [], invaderBullets = [], debris = [];
+        let player = { x: 370, y: 550, width: 50, height: 30, alive: true, shieldActive: false, shieldHits: 3 };
+        let leftKey = false, rightKey = false, upKey = false, downKey = false;
+        let spaceKey = false, canShoot = true, score = 0, ships = 3, level = 1, gameOver = false;
+        let speedMultiplier = 1;
+        let matrixSpeed = 0.2; 
+        const matrixColors = ['#00ff00'];
+        let currentColorIndex = 0; 
+
+        const matrixCharacters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const matrixFontSize = 20; 
+        const matrixColumns = Math.floor(matrixCanvas.width / matrixFontSize);
+        const matrixDrops = Array(matrixColumns).fill(0);
+
+        // Matrix Waterfall Effect - Enhanced
+        function drawMatrix() {
+            matrixCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Slight opacity to give the raining effect
+            matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+            matrixCtx.fillStyle = matrixColors[currentColorIndex];
+            matrixCtx.font = `${matrixFontSize}px monospace`;
+
+            for (let x = 0; x < matrixColumns; x++) {
+                const text = matrixCharacters.charAt(Math.floor(Math.random() * matrixCharacters.length));
+                matrixCtx.fillText(text, x * matrixFontSize, matrixDrops[x] * matrixFontSize);
+
+                if (matrixDrops[x] * matrixFontSize > matrixCanvas.height && Math.random() > 0.975) {
+                    matrixDrops[x] = 0;
+                }
+                matrixDrops[x]++;
+            }
+        }
+
+        function createInvaders() {
+            invaders = [];
+            const basePoints = 5;
+            const pointIncrement = 3;
+
+            for (let i = 0; i < 4; i++) {
+                const rowPoints = basePoints + (i * pointIncrement);
+                let staggerOffset = Math.random() * 30;
+                for (let j = 0; j < 10; j++) {
+                    let color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+
+                    invaders.push({
+                        x: j * 60 + 50 + staggerOffset,
+                        y: i * 50 + 20,
+                        width: 40,
+                        height: 40,
+                        color: color,
+                        alive: true,
+                        explosionTime: 0,
+                        points: rowPoints,
+                    });
+                }
+            }
+        }
+
+        // Player ship glow enhancement
+        function drawPlayer() {
+            if (player.alive) {
+                ctx.fillStyle = '#00ffcc';
+                ctx.shadowBlur = 15; // Add glow effect
+                ctx.shadowColor = '#00ffcc';
+                ctx.beginPath();
+                ctx.moveTo(player.x + player.width / 2, player.y);
+                ctx.lineTo(player.x, player.y + player.height);
+                ctx.lineTo(player.x + player.width, player.y + player.height);
+                ctx.closePath();
+                ctx.fill();
+                ctx.shadowBlur = 0; // Reset shadow after drawing
+            }
+        }
+
+        // Invaders glow enhancement
+        function drawInvaders() {
+            invaders.forEach(invader => {
+                if (invader.alive) {
+                    ctx.fillStyle = invader.color;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = invader.color;
+                    ctx.fillRect(invader.x, invader.y, invader.width, invader.height);
+                    ctx.shadowBlur = 0;
+                }
+            });
+        }
+
+        // Stunning bullets with glow effect
+        function drawPlayerBullet(bullet) {
+            const gradient = ctx.createLinearGradient(bullet.x, bullet.y, bullet.x, bullet.y + bullet.height);
+            gradient.addColorStop(0, '#00ff00');
+            gradient.addColorStop(1, '#ff0000');
+            ctx.fillStyle = gradient;
+
+            ctx.shadowBlur = 15; // Add glow effect to bullets
+            ctx.shadowColor = '#00ff00';
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            ctx.shadowBlur = 0;
+        }
+
+        function drawBullets() {
+            bullets.forEach(bullet => {
+                drawPlayerBullet(bullet);
+            });
+        }
+
+        // Flashy explosions
+        function drawExplosion(x, y) {
+            ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.arc(x, y, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            debris.push({
+                x: x,
+                y: y,
+                dx: (Math.random() - 0.5) * 8,
+                dy: (Math.random() - 0.5) * 8,
+                size: Math.random() * 5 + 2,
+                color: ['#FF4500', '#FF6347', '#FFA500'][Math.floor(Math.random() * 3)]
+            });
+        }
+
+        function drawDebris() {
+            debris.forEach((particle, index) => {
+                ctx.fillStyle = particle.color;
+                ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+                particle.x += particle.dx;
+                particle.y += particle.dy;
+
+                if (particle.x < 0 || particle.x > gameCanvas.width || particle.y < 0 || particle.y > gameCanvas.height) {
+                    debris.splice(index, 1);
+                }
+            });
+        }
+
+        function moveBullets() {
+            bullets.forEach(bullet => bullet.y -= 5);
+            bullets = bullets.filter(bullet => bullet.y > 0);
+        }
+
+        function movePlayer() {
+            if (leftKey && player.x > 0) player.x -= 5;
+            if (rightKey && player.x < gameCanvas.width - player.width) player.x += 5;
+        }
+
+        function shoot() {
+            if (canShoot && player.alive) {
+                bullets.push({
+                    x: player.x + player.width / 2 - 2.5,
+                    y: player.y - 10,
+                    width: 10,
+                    height: 20
+                });
+                canShoot = false;
+                setTimeout(() => canShoot = true, 300);
+            }
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            drawMatrix();  
+            drawPlayer();
+            movePlayer();
+            drawInvaders();
+            drawBullets();
+            moveBullets();
+            drawDebris();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Enter') startGame();
+            if (e.code === 'ArrowLeft') leftKey = true;
+            if (e.code === 'ArrowRight') rightKey = true;
+            if (e.code === 'Space') shoot();
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowLeft') leftKey = false;
+            if (e.code === 'ArrowRight') leftKey = false;
+        });
+
+        function startGame() {
+            createInvaders();
+            gameLoop();
+        }
+
+        createInvaders();
+        setInterval(drawMatrix, 100);
+    </script>
+</body>
+</html>
