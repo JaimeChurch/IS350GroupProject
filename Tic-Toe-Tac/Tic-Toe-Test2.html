@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Toe-Tac</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap'); /* Import retro game font */
+        body {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #1a1a1a; /* Darker, more arcade-like background */
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 3.5vw;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc, 0 0 30px #00cc99;
+            z-index: 1;
+            animation: glow-pulse 2s infinite alternate;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 5px;
+            width: 90vw;
+            max-width: 500px;
+            aspect-ratio: 1;
+            z-index: 1;
+            display: none; /* Hide until game mode is selected */
+            background: linear-gradient(135deg, rgba(50, 50, 50, 0.8), rgba(20, 20, 20, 0.9));
+            border-radius: 15px;
+            border: 4px solid;
+            border-image: linear-gradient(45deg, #ff00cc, #00ccff) 1;
+            box-shadow: 0 0 20px #ff00cc, 0 0 40px #00ccff, inset 0 0 15px #333;
+            transform: perspective(1000px) rotateX(5deg) rotateY(5deg);
+            position: relative; /* To position the winning message in the center */
+        }
+        .cell {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 2px solid #444;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 6vw;
+            cursor: pointer;
+            color: #fff;
+            text-shadow: 0 0 5px #00ffcc;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .cell:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3), inset 0 0 10px #ff00cc;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .cell.x {
+            color: #ff5555;
+            text-shadow: 0 0 5px #ff5555, 0 0 10px #ff0000;
+        }
+        .cell.o {
+            color: #55aaff;
+            text-shadow: 0 0 5px #55aaff, 0 0 10px #0077ff;
+        }
+        .winning-message {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0); /* Start small in the center */
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 2;
+            border: 2px solid #00ccff;
+            box-shadow: 0 0 10px #00ccff, 0 0 20px #00ffcc;
+            animation: win-zoom 1s forwards; /* Zoom animation */
+        }
+        .winning-message.show {
+            display: flex;
+        }
+        @keyframes win-zoom {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+        .mode-selection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+            margin-bottom: 20px;
+        }
+        .mode-selection button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(45deg, #ff00cc, #00ccff);
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 0 10px #ff00cc, 0 0 20px #00ccff;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .mode-selection button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px #ff00cc, 0 0 30px #00ccff;
+        }
+        .scoreboard {
+            display: none; /* Hide until game mode is selected */
+            position: relative;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, rgba(50, 50, 50, 0.8), rgba(20, 20, 20, 0.9));
+            border: 4px solid;
+            border-image: linear-gradient(45deg, #ff00cc, #00ccff) 1;
+            box-shadow: 0 0 20px #00ccff, 0 0 40px #ff00cc, inset 0 0 15px #333;
+            font-size: 1rem;
+            color: #fff;
+            transform: perspective(1000px) rotateX(5deg) rotateY(-5deg);
+        }
+        .scoreboard h2 {
+            margin: 0 0 15px 0;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+        }
+        .scoreboard .score {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .background-symbol {
+            position: absolute;
+            font-size: 5rem;
+            opacity: 0.15;
+            color: #00ffcc;
+            pointer-events: none;
+            animation: float 10s infinite ease-in-out;
+        }
+        @keyframes glow-pulse {
+            from {
+                text-shadow: 0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #00cc99;
+            }
+            to {
+                text-shadow: 0 0 15px #00ffcc, 0 0 30px #00ffcc, 0 0 45px #00cc99;
+            }
+        }
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(360deg);
+            }
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 6vw;
+            }
+            .cell {
+                font-size: 10vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Tic-Toe-Tac</h1>
+        <div class="mode-selection">
+            <button onclick="selectMode('player')">Player vs Player</button>
+            <button onclick="selectMode('computer')">Player vs Computer</button>
+        </div>
+        <div class="board" id="board">
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+        </div>
+        <div class="winning-message" id="winningMessage">
+            <div data-winning-message-text></div>
+            <button id="restartButton">Restart</button>
+        </div>
+        <div class="scoreboard" id="scoreboard">
+            <h2>Scoreboard</h2>
+            <div class="score"><span>X Wins:</span> <span id="xWins">0</span></div>
+            <div class="score"><span>O Wins:</span> <span id="oWins">0</span></div>
+            <div class="score"><span>Ties:</span> <span id="ties">0</span></div>
+        </div>
+    </div>
+    <script>
+        // JavaScript code remains unchanged
+        const X_CLASS = 'x';
+        const O_CLASS = 'o';
+        const WINNING_COMBINATIONS = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+        const cellElements = document.querySelectorAll('[data-cell]');
+        const board = document.getElementById('board');
+        const winningMessageElement = document.getElementById('winningMessage');
+        const winningMessageTextElement = document.querySelector('[data-winning-message-text]');
+        const restartButton = document.getElementById('restartButton');
+        const scoreboard = document.getElementById('scoreboard');
+        const xWinsElement = document.getElementById('xWins');
+        const oWinsElement = document.getElementById('oWins');
+        const tiesElement = document.getElementById('ties');
+        let oTurn;
+        let playAgainstComputer = false;
+        let xWins = 0;
+        let oWins = 0;
+        let ties = 0;
+
+        function selectMode(mode) {
+            document.querySelector('.mode-selection').style.display = 'none'; // Hide mode selection
+            board.style.display = 'grid'; // Show the game board
+            scoreboard.style.display = 'block'; // Show the scoreboard
+            playAgainstComputer = (mode === 'computer');
+            startGame();
+        }
+
+        restartButton.addEventListener('click', startGame);
+
+        function startGame() {
+            oTurn = false;
+            cellElements.forEach(cell => {
+                cell.classList.remove(X_CLASS);
+                cell.classList.remove(O_CLASS);
+                cell.textContent = ''; // Clear text content for a fresh game
+                cell.removeEventListener('click', handleClick);
+                cell.addEventListener('click', handleClick, { once: true });
+            });
+            setBoardHoverClass();
+            winningMessageElement.classList.remove('show');
+        }
+
+        function handleClick(event) {
+            const cell = event.target;
+            const currentClass = oTurn ? O_CLASS : X_CLASS;
+            placeMark(cell, currentClass);
+            if (checkWin(currentClass)) {
+                endGame(false);
+            } else if (isDraw()) {
+                endGame(true);
+            } else {
+                swapTurns();
+                if (playAgainstComputer && !oTurn) {
+                    setTimeout(computerMove, 500); // Delay computer move slightly for better UX
+                } else {
+                    setBoardHoverClass();
+                }
+            }
+        }
+
+        function computerMove() {
+            const availableCells = [...cellElements].filter(cell => 
+                !cell.classList.contains(X_CLASS) && !cell.classList.contains(O_CLASS)
+            );
+            const randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
+            if (randomCell) {
+                placeMark(randomCell, O_CLASS);
+                if (checkWin(O_CLASS)) {
+                    endGame(false);
+                } else if (isDraw()) {
+                    endGame(true);
+                } else {
+                    swapTurns();
+                    setBoardHoverClass();
+                }
+            }
+        }
+
+        function endGame(draw) {
+            if (draw) {
+                winningMessageTextElement.textContent = 'Draw!';
+            } else {
+                winningMessageTextElement.textContent = `${oTurn ? "O's" : "X's"} Wins!`;
+            }
+            winningMessageElement.classList.add('show');
+        }
+
+        function isDraw() {
+            return [...cellElements].every(cell => {
+                return cell.classList.contains(X_CLASS) || cell.classList.contains(O_CLASS);
+            });
+        }
+
+        function placeMark(cell, currentClass) {
+            cell.classList.add(currentClass);
+            cell.textContent = currentClass === X_CLASS ? 'X' : 'O'; // Place the 'X' or 'O'
+        }
+
+        function swapTurns() {
+            oTurn = !oTurn;
+        }
+
+        function setBoardHoverClass() {
+            board.classList.remove(X_CLASS);
+            board.classList.remove(O_CLASS);
+            board.classList.add(oTurn ? O_CLASS : X_CLASS);
+        }
+
+        function checkWin(currentClass) {
+            return WINNING_COMBINATIONS.some(combination => {
+                return combination.every(index => {
+                    return cellElements[index].classList.contains(currentClass);
+                });
+            });
+        }
+
+        // Function to generate random colors
+        function getRandomColor() {
+            const colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33D1', '#33FFF1', '#F033FF'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Generate colorful and animated X's and O's for the background
+        function createAnimatedBackgroundSymbols() {
+            const symbols = ['X', 'O'];
+            const numberOfSymbols = 75; // Adjust this number for more or fewer symbols
+
+            for (let i = 0; i < numberOfSymbols; i++) {
+                const symbol = document.createElement('div');
+                symbol.className = 'background-symbol';
+                symbol.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                symbol.style.color = getRandomColor(); // Set a random color
+
+                // Randomize size, position, and animation duration
+                const randomSize = Math.random() * 4 + 3 + 'rem'; // Between 3rem and 7rem
+                const randomX = Math.random() * 100 + 'vw'; // Random position across the viewport width
+                const randomY = Math.random() * 100 + 'vh'; // Random position across the viewport height
+                const randomRotation = Math.random() * 360 + 'deg'; // Random rotation
+                const randomOpacity = Math.random() * 0.3 + 0.1; // Random opacity between 0.1 and 0.4
+                const randomDuration = Math.random() * 5 + 5 + 's'; // Animation duration between 5s and 10s
+
+                symbol.style.fontSize = randomSize;
+                symbol.style.left = randomX;
+                symbol.style.top = randomY;
+                symbol.style.transform = `rotate(${randomRotation})`;
+                symbol.style.opacity = randomOpacity;
+                symbol.style.animationDuration = randomDuration; // Set the animation duration
+
+                document.body.appendChild(symbol);
+            }
+        }
+
+        // Call the function to create animated background symbols
+        createAnimatedBackgroundSymbols();
+    </script>
+</body>
+</html>
