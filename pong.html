@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game with AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #333; color: #fff; font-family: Arial, sans-serif; flex-direction: column; }
+        canvas { border: 2px solid #fff; background: #222; margin-top: 10px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #scoreMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: white;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <button id="startButton">Start Game</button>
+    <div id="scoreMessage">Player Scored!</div>
+    <canvas id="pongCanvas" width="600" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('pongCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const scoreMessage = document.getElementById('scoreMessage');
+
+        const paddleWidth = 10;
+        const paddleHeight = 80;
+
+        // Initial and maximum ball speeds at 25% of previous values
+        const initialSpeed = 0.75;
+        const speedIncrement = 1.02;
+        const maxSpeed = 1.25;
+
+        // Paddle speeds
+        const playerPaddleSpeed = 0.75;
+        const aiPaddleSpeed = 0.625;
+
+        // Sound effects
+        const paddleHitSound = new Audio('https://cdn.freesound.org/previews/758/758955_12604274-lq.mp3');
+        const aiScoreSound = new Audio('https://cdn.freesound.org/previews/333/333785_5858296-lq.mp3');
+        const playerScoreSound = new Audio('https://cdn.freesound.org/previews/609/609335_2770604-lq.mp3');
+        aiScoreSound.volume = 0.1; // Set volume to 10% for AI score sound
+
+        const playerPaddle = { x: 10, y: canvas.height / 2 - paddleHeight / 2, width: paddleWidth, height: paddleHeight, dy: playerPaddleSpeed };
+        const aiPaddle = { x: canvas.width - paddleWidth - 10, y: canvas.height / 2 - paddleHeight / 2, width: paddleWidth, height: paddleHeight, dy: aiPaddleSpeed };
+        const ball = { x: canvas.width / 2, y: canvas.height / 2, dx: initialSpeed, dy: initialSpeed, radius: 8 };
+
+        let playerScore = 0;
+        let aiScore = 0;
+        let isGameRunning = false;
+        let isGamePaused = false;
+
+        function drawPaddle(paddle) {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+        }
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawScore() {
+            ctx.font = '20px Arial';
+            ctx.fillText('Player: ' + playerScore, 20, 30);
+            ctx.fillText('AI: ' + aiScore, canvas.width - 80, 30);
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = initialSpeed * (Math.random() < 0.5 ? 1 : -1);
+            ball.dy = initialSpeed * (Math.random() < 0.5 ? 1 : -1);
+        }
+
+        function movePlayerPaddle() {
+            if (upPressed && playerPaddle.y > 0) {
+                playerPaddle.y -= playerPaddle.dy;
+            } else if (downPressed && playerPaddle.y < canvas.height - playerPaddle.height) {
+                playerPaddle.y += playerPaddle.dy;
+            }
+        }
+
+        function moveAIPaddle() {
+            if (aiPaddle.y + aiPaddle.height / 2 < ball.y) {
+                aiPaddle.y += aiPaddle.dy;
+            } else if (aiPaddle.y + aiPaddle.height / 2 > ball.y) {
+                aiPaddle.y -= aiPaddle.dy;
+            }
+        }
+
+        function showScoreMessage(message) {
+            scoreMessage.textContent = message;
+            scoreMessage.style.display = 'block';
+            isGamePaused = true;
+
+            setTimeout(() => {
+                scoreMessage.style.display = 'none';
+                isGamePaused = false;
+                resetBall();
+            }, 1500); // Show the message for 1.5 seconds before resuming
+        }
+
+        function moveBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Ball collision with top and bottom walls
+            if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+                ball.dy *= -1;
+            }
+
+            // Ball collision with player paddle
+            if (ball.x - ball.radius < playerPaddle.x + playerPaddle.width &&
+                ball.y > playerPaddle.y &&
+                ball.y < playerPaddle.y + playerPaddle.height) {
+                ball.dx = Math.max(-maxSpeed, Math.min(maxSpeed, ball.dx * -speedIncrement));
+                paddleHitSound.play(); // Play sound on player paddle hit
+            }
+
+            // Ball collision with AI paddle
+            if (ball.x + ball.radius > aiPaddle.x &&
+                ball.y > aiPaddle.y &&
+                ball.y < aiPaddle.y + aiPaddle.height) {
+                ball.dx = Math.max(-maxSpeed, Math.min(maxSpeed, ball.dx * -speedIncrement));
+                paddleHitSound.play(); // Play sound on AI paddle hit
+            }
+
+            // Ball goes out of bounds
+            if (ball.x - ball.radius < 0) { // Player misses, AI scores
+                aiScore++;
+                aiScoreSound.play(); // Play sound for AI scoring
+                showScoreMessage("AI Scored!");
+            }
+            if (ball.x + ball.radius > canvas.width) { // AI misses, Player scores
+                playerScore++;
+                playerScoreSound.play(); // Play sound for Player scoring
+                showScoreMessage("Player Scored!");
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPaddle(playerPaddle);
+            drawPaddle(aiPaddle);
+            drawBall();
+            drawScore();
+            movePlayerPaddle();
+            moveAIPaddle();
+            moveBall();
+        }
+
+        function gameLoop() {
+            if (isGameRunning && !isGamePaused) {
+                draw();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        let upPressed = false;
+        let downPressed = false;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') upPressed = true;
+            if (e.key === 'ArrowDown') downPressed = true;
+            if (e.key === 'p' || e.key === 'P') togglePause();
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowUp') upPressed = false;
+            if (e.key === 'ArrowDown') downPressed = false;
+        });
+
+        startButton.addEventListener('click', () => {
+            isGameRunning = true;
+            isGamePaused = false;
+            startButton.style.display = 'none'; // Hide the start button
+            resetBall(); // Reset ball to center on start
+        });
+
+        function togglePause() {
+            if (isGameRunning) {
+                isGamePaused = !isGamePaused;
+                if (isGamePaused) {
+                    startButton.style.display = 'block'; // Show button to indicate pause
+                    startButton.textContent = 'Resume Game';
+                } else {
+                    startButton.style.display = 'none';
+                }
+            }
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
