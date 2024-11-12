@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Western Hangman - The Ultimate Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredericka+the+Great&display=swap" rel="stylesheet">
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Fredericka the Great', cursive;
+            background: linear-gradient(to bottom, #87CEEB, #ffcc70 30%, #ff914d 80%, #a0522d); /* Sky to sunset to ground */
+            color: #333;
+            text-align: center;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Title Styling */
+        h1 {
+            color: #8b4513;
+            font-size: 4em;
+            margin: 20px;
+            text-shadow: 4px 4px #000;
+        }
+
+        /* Hangman Canvas */
+        #hangmanCanvas {
+            width: 400px;
+            height: 500px;
+            background-color: #f8e1b1;
+            margin-top: 30px;
+            border-radius: 10px;
+            box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        /* Word Display */
+        #wordDisplay {
+            font-size: 40px;
+            letter-spacing: 14px;
+            font-weight: bold;
+            color: #8b4513;
+            margin: 20px;
+            text-shadow: 3px 3px #e0c097;
+        }
+
+        /* Message Styling */
+        #message {
+            color: #b22222;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px;
+        }
+
+        /* Input and Button Styling */
+        input, button {
+            padding: 15px;
+            font-size: 22px;
+            margin: 10px;
+            border: 2px solid #8b4513;
+            background-color: #e6ccb2;
+            color: #333;
+            border-radius: 8px;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Wrong Letters Display */
+        #wrongLetters, #wrongGuesses {
+            font-size: 22px;
+            color: #b22222;
+            font-weight: bold;
+        }
+
+        /* Reset Button */
+        #resetButton {
+            display: none;
+            padding: 15px;
+            font-size: 20px;
+            background-color: #b22222;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 12px;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.3s;
+        }
+        #resetButton:hover {
+            background-color: #8b0000;
+        }
+
+        /* Western Town Layout */
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            margin-top: 30px;
+            gap: 20px;
+        }
+
+        /* Building Styling */
+        .building {
+            width: 200px;
+            height: 400px;
+            background-color: #8b5a2b;
+            border: 3px solid #3e2f23;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 10px 10px 15px rgba(0, 0, 0, 0.7);
+            color: #f4e4c3;
+            text-align: center;
+            font-size: 1.7em;
+            background-image: linear-gradient(#8b5a2b 20px, transparent 20px);
+            background-size: 100% 60px; /* Enhanced paneling effect */
+        }
+
+        /* Saloon Building */
+        .saloon {
+            background-color: #a0522d;
+        }
+
+        /* Hotel Building with A-Frame Roof */
+        .hotel {
+            background-color: #8b5a2b;
+            padding-top: 30px;
+        }
+
+        /* Roof Styling for A-Frame */
+        .roof {
+            width: 200px;
+            height: 0;
+            border-left: 100px solid transparent;
+            border-right: 100px solid transparent;
+            border-bottom: 50px solid #3e2f23;
+            position: absolute;
+            top: -50px;
+        }
+
+        .building .sign {
+            width: 100%;
+            background-color: #3e2f23;
+            color: #f4e4c3;
+            padding: 12px;
+            border-bottom: 3px solid #2d1e12;
+        }
+
+        .window {
+            width: 60px;
+            height: 80px;
+            background-color: #f4e4c3;
+            border: 3px solid #3e2f23;
+            margin: 15px;
+        }
+
+        .door {
+            width: 90px;
+            height: 120px;
+            background-color: #3e2f23;
+            border: 3px solid #2d1e12;
+            margin-top: auto;
+        }
+
+        /* Enhanced Ground Styling */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60vh;
+            background: linear-gradient(to top, #c19a6b, #d2b48c 60%);
+            z-index: -2;
+        }
+
+        /* Cactus and Bushes Styling */
+        .cactus, .bush {
+            position: absolute;
+            bottom: 5%;
+            width: 100px;
+            height: 200px;
+            background: #228B22;
+            border-radius: 20px;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .cactus::before, .cactus::after, .bush::before, .bush::after {
+            content: "";
+            position: absolute;
+            width: 50px;
+            height: 120px;
+            background: #228B22;
+            border-radius: 20px;
+        }
+
+        .cactus::before {
+            left: -40px;
+            top: 20px;
+        }
+
+        .cactus::after {
+            right: -40px;
+            top: 40px;
+        }
+
+        .bush {
+            height: 120px;
+            width: 150px;
+            bottom: 5%;
+            background: #2E8B57;
+            border-radius: 50%;
+        }
+
+        .bush::before {
+            left: -30px;
+            top: 10px;
+            width: 80px;
+            height: 100px;
+        }
+
+        .bush::after {
+            right: -30px;
+            top: 20px;
+            width: 80px;
+            height: 100px;
+        }
+
+        /* Start Page Styling */
+        #startPage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+            background: linear-gradient(to bottom, #87CEEB, #ff914d);
+            z-index: 999; /* Make sure the start page is on top */
+        }
+
+        .big-title {
+            font-size: 6em;
+            color: #8b4513;
+            text-shadow: 5px 5px #000;
+            letter-spacing: 0.1em;
+            animation: shake 1.5s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            10% { transform: rotate(-3deg); }
+            20% { transform: rotate(3deg); }
+            30% { transform: rotate(-3deg); }
+            40% { transform: rotate(3deg); }
+        }
+
+        #instructions {
+            font-size: 1.7em;
+            max-width: 800px;
+            color: #333;
+            margin: 20px;
+            background-color: #fff3e0;
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid #8b4513;
+            box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .start-button {
+            padding: 25px 50px;
+            font-size: 2em;
+            background-color: #a52a2a;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.4);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .start-button:hover {
+            background-color: #8b0000;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Page -->
+    <div id="startPage">
+        <div class="big-title">Western Hangman</div>
+        <div id="instructions">
+            <p>Welcome to Western Hangman! In this classic game, you’ll try to guess the hidden word by entering one letter at a time. Be careful, though! For each incorrect guess, a part of the hangman will appear. You have 6 tries to guess the word correctly before the game ends.</p>
+            <p>To play, enter a letter and click 'Guess.' Good luck, partner!</p>
+        </div>
+        <button class="start-button" onclick="startGame()">Start Game</button>
+    </div>
+
+    <!-- Game Page -->
+    <div id="gamePage" style="display: none;">
+        <div class="sunset"></div>
+        <div class="ground"></div>
+        <div class="cactus" style="left: 2%;"></div>
+        <div class="cactus" style="right: 2%;"></div>
+        <div class="bush" style="left: 10%;"></div>
+        <div class="bush" style="right: 10%;"></div>
+        <h1>Western Hangman</h1>
+        <div class="game-container">
+            <!-- Saloon Building -->
+            <div class="building saloon left">
+                <div class="sign">Saloon</div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="door"></div>
+            </div>
+
+            <!-- Hangman Canvas -->
+            <canvas id="hangmanCanvas"></canvas>
+
+            <!-- Hotel Building with A-Frame Roof -->
+            <div class="building hotel right">
+                <div class="roof"></div>
+                <div class="sign">Hotel</div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="door"></div>
+            </div>
+        </div>
+
+        <p id="wordDisplay">_ _ _ _</p>
+        <p id="message"></p>
+        <input type="text" id="guessInput" maxlength="1" placeholder="Enter a letter">
+        <button onclick="guessLetter()">Guess</button>
+        <p id="wrongGuesses">Wrong Guesses: <span>0</span></p>
+        <p id="wrongLetters">Wrong Letters: </p>
+        <button id="resetButton" onclick="resetGame()">Reset Game</button>
+    </div>
+
+    <script>
+        function startGame() {
+            document.getElementById("startPage").style.display = "none";
+            document.getElementById("gamePage").style.display = "block";
+            initializeGame();
+        }
+
+        let chosenWord, displayWord, wrongGuesses, maxGuesses, guessedLetters;
+
+        async function fetchRandomWord() {
+            try {
+                const response = await fetch('https://random-word-api.herokuapp.com/word?number=1');
+                const data = await response.json();
+                return data[0].toLowerCase();
+            } catch (error) {
+                console.error("Error fetching word:", error);
+                return "default";
+            }
+        }
+
+        async function initializeGame() {
+            chosenWord = await fetchRandomWord();
+            displayWord = "_".repeat(chosenWord.length).split("");
+            wrongGuesses = 0;
+            maxGuesses = 6;
+            guessedLetters = [];
+            document.getElementById("wordDisplay").innerText = displayWord.join(" ");
+            document.getElementById("wrongGuesses").innerText = wrongGuesses;
+            document.getElementById("wrongLetters").innerText = "Wrong Letters: ";
+            document.getElementById("message").innerText = "";
+            document.getElementById("resetButton").style.display = "none";
+            document.getElementById("guessInput").disabled = false;
+            clearCanvas();
+        }
+
+        function guessLetter() {
+            const guessInput = document.getElementById("guessInput");
+            const guess = guessInput.value.toLowerCase();
+            guessInput.value = "";
+
+            if (guess.length !== 1 || guessedLetters.includes(guess)) {
+                document.getElementById("message").innerText = "Enter a new letter!";
+                return;
+            }
+
+            guessedLetters.push(guess);
+
+            if (chosenWord.includes(guess)) {
+                for (let i = 0; i < chosenWord.length; i++) {
+                    if (chosenWord[i] === guess) {
+                        displayWord[i] = guess;
+                    }
+                }
+                document.getElementById("wordDisplay").innerText = displayWord.join(" ");
+            } else {
+                wrongGuesses++;
+                document.getElementById("wrongGuesses").innerText = wrongGuesses;
+                document.getElementById("wrongLetters").innerText += guess + " ";
+                drawHangman();
+            }
+
+            checkGameStatus();
+        }
+
+        function checkGameStatus() {
+            if (!displayWord.includes("_")) {
+                document.getElementById("message").innerText = "Congratulations, Partner! You won!";
+                endGame();
+            } else if (wrongGuesses >= maxGuesses) {
+                document.getElementById("message").innerText = "Game Over, Partner! The word was " + chosenWord;
+                endGame();
+                goLimp();
+                swingBackAndForth();
+            }
+        }
+
+        function endGame() {
+            document.getElementById("guessInput").disabled = true;
+            document.getElementById("resetButton").style.display = "inline-block";
+        }
+
+        function resetGame() {
+            initializeGame();
+        }
+
+        const canvas = document.getElementById("hangmanCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 400;
+        canvas.height = 500;
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "#8b4513";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(10, 490);
+            ctx.lineTo(390, 490); // Base
+            ctx.moveTo(60, 490);
+            ctx.lineTo(60, 20); // Vertical Pole
+            ctx.lineTo(300, 20); // Horizontal Beam
+            ctx.lineTo(300, 70); // Rope Drop
+            ctx.stroke();
+        }
+
+        function drawHangman() {
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 3;
+            switch (wrongGuesses) {
+                case 1:
+                    // Draw head with eyes and mouth
+                    ctx.beginPath();
+                    ctx.arc(300, 100, 30, 0, Math.PI * 2); // Head
+                    ctx.stroke();
+
+                    // Draw eyes
+                    ctx.beginPath();
+                    ctx.arc(290, 90, 5, 0, Math.PI * 2); // Left Eye
+                    ctx.arc(310, 90, 5, 0, Math.PI * 2); // Right Eye
+                    ctx.fillStyle = "#000";
+                    ctx.fill();
+
+                    // Draw mouth
+                    ctx.beginPath();
+                    ctx.arc(300, 110, 10, 0, Math.PI); // Mouth (smile)
+                    ctx.stroke();
+                    break;
+                case 2:
+                    // Draw body
+                    ctx.beginPath();
+                    ctx.moveTo(300, 130);
+                    ctx.lineTo(300, 250); // Body
+                    ctx.stroke();
+                    break;
+                case 3:
+                    // Draw left arm
+                    ctx.beginPath();
+                    ctx.moveTo(300, 150);
+                    ctx.lineTo(260, 200); // Left Arm
+                    ctx.stroke();
+                    break;
+                case 4:
+                    // Draw right arm
+                    ctx.beginPath();
+                    ctx.moveTo(300, 150);
+                    ctx.lineTo(340, 200); // Right Arm
+                    ctx.stroke();
+                    break;
+                case 5:
+                    // Draw left leg
+                    ctx.beginPath();
+                    ctx.moveTo(300, 250);
+                    ctx.lineTo(260, 320); // Left Leg
+                    ctx.stroke();
+                    break;
+                case 6:
+                    // Draw right leg
+                    ctx.beginPath();
+                    ctx.moveTo(300, 250);
+                    ctx.lineTo(340, 320); // Right Leg
+                    ctx.stroke();
+                    break;
+            }
+        }
+
+        function goLimp() {
+            // Modify body parts to appear limp
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 3;
+
+            // Limp Head
+            ctx.clearRect(270, 70, 60, 60); // Clear previous head
+            ctx.beginPath();
+            ctx.arc(300, 140, 30, 0, Math.PI * 2); // Head lower down (limp)
+            ctx.stroke();
+
+            // Limp Body
+            ctx.clearRect(295, 130, 10, 130); // Clear previous body
+            ctx.beginPath();
+            ctx.moveTo(300, 170);
+            ctx.lineTo(300, 290); // Lower body (limp)
+            ctx.stroke();
+
+            // Limp Left Arm
+            ctx.clearRect(220, 140, 80, 70); // Clear previous left arm
+            ctx.beginPath();
+            ctx.moveTo(300, 190);
+            ctx.lineTo(240, 250); // Left Arm hanging down
+            ctx.stroke();
+
+            // Limp Right Arm
+            ctx.clearRect(300, 140, 80, 70); // Clear previous right arm
+            ctx.beginPath();
+            ctx.moveTo(300, 190);
+            ctx.lineTo(360, 250); // Right Arm hanging down
+            ctx.stroke();
+
+            // Limp Left Leg
+            ctx.clearRect(240, 250, 60, 80); // Clear previous left leg
+            ctx.beginPath();
+            ctx.moveTo(300, 290);
+            ctx.lineTo(260, 370); // Left Leg bent
+            ctx.stroke();
+
+            // Limp Right Leg
+            ctx.clearRect(300, 250, 60, 80); // Clear previous right leg
+            ctx.beginPath();
+            ctx.moveTo(300, 290);
+            ctx.lineTo(340, 370); // Right Leg bent
+            ctx.stroke();
+        }
+
+        function swingBackAndForth() {
+            let angle = 0;
+            let direction = 1;
+
+            function swing() {
+                clearCanvas();
+                ctx.save();
+                ctx.translate(300, 70); // Translate to pivot point
+                ctx.rotate((Math.PI / 180) * angle); // Rotate the context
+                ctx.translate(-300, -70); // Translate back
+
+                // Draw the hangman structure and figure
+                clearCanvas();
+                ctx.strokeStyle = "#8b4513";
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(10, 490);
+                ctx.lineTo(390, 490); // Base
+                ctx.moveTo(60, 490);
+                ctx.lineTo(60, 20); // Vertical Pole
+                ctx.lineTo(300, 20); // Horizontal Beam
+                ctx.lineTo(300, 70); // Rope Drop
+                ctx.stroke();
+                goLimp();
+
+                ctx.restore();
+
+                angle += direction * 0.5;
+                if (angle > 10 || angle < -10) {
+                    direction *= -1;
+                }
+
+                requestAnimationFrame(swing);
+            }
+
+            swing();
+        }
+    </script>
+</body>
+</html>
