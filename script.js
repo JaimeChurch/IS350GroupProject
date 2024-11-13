@@ -17,3 +17,15 @@ document.addEventListener('click', (e) => {
         }
     }
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Get the game parameter from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const game = urlParams.get("game");
+
+    // If a game parameter is present, set it as the iframe source
+    if (game) {
+        const iframe = document.getElementById("gameFrame");
+        iframe.src = game;
+    }
+});
