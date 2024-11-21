@@ -18,14 +18,30 @@ document.addEventListener('click', (e) => {
     }
 });
 
+const gameLinks = [
+    { name: "Matrix Invader", link: "matrixInvader.html" },
+    { name: "Tic-Toe-Tac", link: "ticToeTac.html" },
+    { name: "Hangman", link: "hangman.html" },
+    { name: "Breakout", link: "breakout.html" }
+];
+
 document.addEventListener("DOMContentLoaded", function () {
     // Get the game parameter from the URL
     const urlParams = new URLSearchParams(window.location.search);
     const game = urlParams.get("game");
 
-    // If a game parameter is present, set it as the iframe source
+    const iframe = document.getElementById("gameFrame");
+    const gameTitleElement = document.querySelector("h2"); // The h2 tag for featured game
+
+    // If a game parameter is present, load it
     if (game) {
-        const iframe = document.getElementById("gameFrame");
-        iframe.src = game;
+        const selectedGame = gameLinks.find(g => g.link === game);
+        iframe.src = selectedGame ? selectedGame.link : gameLinks[0].link;
+        gameTitleElement.textContent = `Featured Game: ${selectedGame ? selectedGame.name : 'Random Game'}`;
+    } else {
+        // Otherwise, randomly select a game
+        const randomGame = gameLinks[Math.floor(Math.random() * gameLinks.length)];
+        iframe.src = randomGame.link;
+        gameTitleElement.textContent = `Featured Game: ${randomGame.name}`;
     }
 });
