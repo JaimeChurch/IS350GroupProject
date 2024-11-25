@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game with AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tsukimi+Rounded:wght@700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Blippo';
+            src: url('blippo/BlippoBlackBT.ttf') format('truetype');
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #333; color: #fff; font-family: 'Blippo', sans-serif; flex-direction: column; }
+        canvas { width: 1200px; height: 900px; border: 2px solid #fff; background: #222; border-radius: 15px; margin-top: 10px; cursor: auto; }
+        #scoreMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 54px;
+            color: white;
+            display: none;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        #pongLogo {
+            font-size: 68px;
+            font-family: 'Blippo', sans-serif;
+            color: white;
+            margin-bottom: 20px;
+        }
+        #startText {
+            font-size: 24px;
+            color: white;
+        }
+        #controlsText {
+            font-size: 18px;
+            color: white;
+            margin-top: 25px;
+        }
+    </style>
+</head>
+<body>
+    <div id="startScreen">
+        <div id="pongLogo">PONG</div>
+        <div id="startText">Click to Start</div>
+        <div id="controlsText">▲ Up | ▼ Down | ▄▄▄▄ Pause</div>
+    </div>
+    <div id="scoreMessage">Player Scored!</div>
+    <canvas id="pongCanvas" width="1200" height="900"></canvas>
+    <script>
+        const canvas = document.getElementById('pongCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreMessage = document.getElementById('scoreMessage');
+        const startScreen = document.getElementById('startScreen');
+
+        const paddleWidth = 20;
+        const paddleHeight = 160;
+
+        const initialSpeed = 0.95;
+        const speedIncrement = 1.2;
+        const maxSpeed = 12;
+
+        const playerPaddleSpeed = 1.6;
+        const aiPaddleSpeed = 1.5;
+
+        const paddleHitSound = new Audio('https://cdn.freesound.org/previews/758/758955_12604274-lq.mp3');
+        const aiScoreSound = new Audio('https://cdn.freesound.org/previews/333/333785_5858296-lq.mp3');
+        const playerScoreSound = new Audio('https://cdn.freesound.org/previews/609/609335_2770604-lq.mp3');
+        aiScoreSound.volume = 0.1;
+
+        const playerPaddle = { x: 10, y: canvas.height / 2 - paddleHeight / 2, width: paddleWidth, height: paddleHeight, dy: playerPaddleSpeed };
+        const aiPaddle = { x: canvas.width - paddleWidth - 10, y: canvas.height / 2 - paddleHeight / 2, width: paddleWidth, height: paddleHeight, dy: aiPaddleSpeed };
+        const ball = { x: canvas.width / 2, y: canvas.height / 2, dx: initialSpeed, dy: initialSpeed, radius: 16 };
+
+        let playerScore = 0;
+        let aiScore = 0;
+        let isGameRunning = false;
+        let isGamePaused = false;
+
+        function drawPaddle(paddle) {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+        }
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawScore() {
+            ctx.font = '40px Blippo';
+            ctx.fillText('Player: ' + playerScore, 40, 60);
+            ctx.fillText('AI: ' + aiScore, canvas.width - 160, 60);
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = initialSpeed * (Math.random() < 0.5 ? 1 : -1);
+            ball.dy = initialSpeed * (Math.random() < 0.5 ? 1 : -1);
+        }
+
+        function movePlayerPaddle() {
+            if (upPressed && playerPaddle.y > 0) {
+                playerPaddle.y -= playerPaddle.dy;
+            } else if (downPressed && playerPaddle.y < canvas.height - playerPaddle.height) {
+                playerPaddle.y += playerPaddle.dy;
+            }
+        }
+
+        function moveAIPaddle() {
+            if (aiPaddle.y + aiPaddle.height / 2 < ball.y) {
+                aiPaddle.y += aiPaddle.dy;
+            } else if (aiPaddle.y + aiPaddle.height / 2 > ball.y) {
+                aiPaddle.y -= aiPaddle.dy;
+            }
+        }
+
+        function showScoreMessage(message) {
+            scoreMessage.textContent = message;
+            scoreMessage.style.display = 'block';
+            isGamePaused = true;
+
+            setTimeout(() => {
+                scoreMessage.style.display = 'none';
+                isGamePaused = false;
+                resetBall();
+            }, 1500);
+        }
+
+        function moveBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Ball bouncing off the top or bottom walls
+            if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+                ball.dy *= -1;
+            }
+
+            // Collision with player paddle
+            if (ball.x - ball.radius < playerPaddle.x + playerPaddle.width &&
+                ball.y > playerPaddle.y &&
+                ball.y < playerPaddle.y + playerPaddle.height) {
+                ball.dx = Math.max(-maxSpeed, Math.min(maxSpeed, ball.dx * -speedIncrement));
+                ball.dy += (Math.random() * 0.8 - 0.4); // Increased randomness to dy to prevent predictable back-and-forth
+                paddleHitSound.play();
+            }
+
+            // Collision with AI paddle
+            if (ball.x + ball.radius > aiPaddle.x &&
+                ball.y > aiPaddle.y &&
+                ball.y < aiPaddle.y + aiPaddle.height) {
+                ball.dx = Math.max(-maxSpeed, Math.min(maxSpeed, ball.dx * -speedIncrement));
+                ball.dy += (Math.random() * 0.8 - 0.4); // Increased randomness to dy to prevent predictable back-and-forth
+                paddleHitSound.play();
+            }
+
+            // Check if ball passes the player paddle
+            if (ball.x - ball.radius < 0) {
+                aiScore++;
+                aiScoreSound.play();
+                showScoreMessage("AI Scored!");
+            }
+            // Check if ball passes the AI paddle
+            if (ball.x + ball.radius > canvas.width) {
+                playerScore++;
+                playerScoreSound.play();
+                showScoreMessage("Player Scored!");
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPaddle(playerPaddle);
+            drawPaddle(aiPaddle);
+            drawBall();
+            drawScore();
+            movePlayerPaddle();
+            moveAIPaddle();
+            moveBall();
+        }
+
+        function gameLoop() {
+            if (isGameRunning && !isGamePaused) {
+                draw();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        let upPressed = false;
+        let downPressed = false;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') upPressed = true;
+            if (e.key === 'ArrowDown') downPressed = true;
+            if (e.key === ' ') togglePause();
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowUp') upPressed = false;
+            if (e.key === 'ArrowDown') downPressed = false;
+        });
+
+        startScreen.addEventListener('click', () => {
+            if (!isGameRunning) {
+                isGameRunning = true;
+                isGamePaused = false;
+                startScreen.style.display = 'none';
+                resetBall();
+                canvas.style.cursor = 'none';
+            }
+        });
+
+        document.addEventListener('mousemove', () => {
+            if (isGameRunning) {
+                canvas.style.cursor = 'auto';
+                clearTimeout(hideCursorTimeout);
+                hideCursorTimeout = setTimeout(() => {
+                    canvas.style.cursor = 'none';
+                }, 2000);
+            }
+        });
+
+        let hideCursorTimeout;
+
+        function togglePause() {
+            if (isGameRunning) {
+                isGamePaused = !isGamePaused;
+                if (isGamePaused) {
+                    startScreen.style.display = 'flex';
+                    startScreen.querySelector('#startText').textContent = 'Resume Game';
+                } else {
+                    startScreen.style.display = 'none';
+                }
+            }
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
