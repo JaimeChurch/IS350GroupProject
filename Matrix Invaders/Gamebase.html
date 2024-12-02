@@ -1,11 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- [Your existing head content remains unchanged] -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Matrix Invaders</title>
     <style>
+      /* Global Box Sizing */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
       /* General Styling */
       body {
         margin: 0;
@@ -17,7 +23,7 @@
         height: 100vh;
       }
       #gameContainer {
-        position: relative;
+        position: relative; /* Ensures child elements are positioned relative to this container */
         width: 100%;
         height: 100%;
         max-width: 1024px;
@@ -25,13 +31,14 @@
         border: 3px solid #00ff00;
         box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
         overflow: hidden;
+        background-color: black;
+        padding: 20px; /* Ensures content doesn't touch the edges */
       }
       canvas {
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%; /* Make canvas responsive */
-        height: 100%;
+        /* The actual size is controlled via JavaScript for proper scaling */
       }
       #matrixCanvas {
         z-index: 0;
@@ -45,7 +52,7 @@
       #level {
         position: absolute;
         color: #00ff00;
-        font-size: 1.5vw;
+        font-size: 2vw; /* Adjusted for better scaling */
         z-index: 2;
         font-family: "Courier New", Courier, monospace;
         text-shadow: 0 0 5px #00ff00;
@@ -81,30 +88,31 @@
         text-align: center; /* Center content */
       }
       #startScreen h1 {
-        font-size: 5vw;
+        font-size: clamp(24px, 8vw, 48px); /* Adjusted for better responsiveness */
         color: #00ff00;
         text-shadow: 0px 0px 10px lime, 0px 0px 20px green;
         animation: pulse 2s infinite;
         margin: 0; /* Remove default margin */
       }
       #controls {
-        font-size: 2vw;
+        font-size: clamp(16px, 3vw, 24px); /* Adjusted for better visibility */
         color: #00ffcc;
         margin-top: 20px;
       }
       #startScreen p {
-        font-size: 2vw;
+        font-size: clamp(16px, 3vw, 24px); /* Adjusted for better visibility */
         color: #00ffcc;
         margin-top: 20px;
       }
       /* Game Over Message Styling */
-      #gameOverMessage {
+      #gameOverMessage,
+      #victoryMessage {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        color: #ff0000;
-        font-size: 4vw;
+        color: #ff0000; /* Default color for game over */
+        font-size: clamp(24px, 6vw, 48px); /* Adjusted for better responsiveness */
         display: none;
         animation: pulse 2s infinite, colorChange 5s infinite;
         z-index: 4;
@@ -112,6 +120,10 @@
         text-shadow: 0 0 10px #ff0000;
         text-align: center; /* Center text */
         margin: 0; /* Ensure no default margins */
+      }
+      #victoryMessage {
+        color: #00ff00; /* Overriding color for victory */
+        text-shadow: 0 0 10px #00ff00;
       }
       /* Shield Bar Styling */
       #shieldBarContainer {
@@ -125,6 +137,7 @@
         text-align: center;
         color: #00ffcc;
         display: none;
+        z-index: 2;
       }
       #shieldBar {
         width: 100%;
@@ -178,6 +191,42 @@
           color: #ff0000;
         }
       }
+
+      /* Media Queries for Extra Control */
+
+      /* For small screens (e.g., smartphones) */
+      @media (max-width: 480px) {
+        #startScreen h1 {
+          font-size: clamp(20px, 10vw, 40px); /* Slightly adjusted for smaller screens */
+        }
+        
+        #controls,
+        #startScreen p {
+          font-size: clamp(14px, 4vw, 20px); /* Increased for better visibility */
+        }
+        
+        #gameOverMessage,
+        #victoryMessage {
+          font-size: clamp(20px, 5vw, 40px);
+        }
+      }
+
+      /* For very large screens */
+      @media (min-width: 1440px) {
+        #startScreen h1 {
+          font-size: clamp(32px, 6vw, 80px); /* Adjusted for larger screens */
+        }
+        
+        #controls,
+        #startScreen p {
+          font-size: clamp(18px, 2.5vw, 28px);
+        }
+        
+        #gameOverMessage,
+        #victoryMessage {
+          font-size: clamp(28px, 7vw, 60px);
+        }
+      }
     </style>
   </head>
   <body>
@@ -198,6 +247,7 @@
         <p>Press ENTER to start game</p>
       </div>
       <div id="gameOverMessage">YOU ARE DEAD!</div>
+      <div id="victoryMessage">CONGRATULATIONS! YOU WIN!</div>
       <div id="shieldBarContainer">
         <!-- Shield bar container -->
         <div>SHIELD</div>
@@ -214,6 +264,7 @@
       const levelElement = document.getElementById("level");
       const startScreen = document.getElementById("startScreen");
       const gameOverMessage = document.getElementById("gameOverMessage");
+      const victoryMessage = document.getElementById("victoryMessage");
       const shieldBar = document.getElementById("shieldBar");
       const shieldBarContainer = document.getElementById("shieldBarContainer");
 
@@ -224,6 +275,7 @@
       const shootSound = new Audio('sound/shoot.wav');
       const explosionSound = new Audio('sound/explosion.wav');
       const gameOverSound = new Audio('sound/gameover.wav');
+      const victorySound = new Audio('sound/victory.wav'); // New victory sound
 
       // Load background music
       const backgroundMusic = new Audio('sound/gamemusic.wav');
@@ -234,6 +286,7 @@
       shootSound.preload = 'auto';
       explosionSound.preload = 'auto';
       gameOverSound.preload = 'auto';
+      victorySound.preload = 'auto';
       backgroundMusic.preload = 'auto';
 
       let invaders = [],
@@ -259,86 +312,94 @@
         score = 0,
         ships = 3,
         level = 1,
-        gameOver = false;
-      let speedMultiplier = 0.5; // Start slower
-      let matrixSpeed = 0.03; // Significantly slower matrix code
+        gameOver = false,
+        victory = false;
+      let speedMultiplier = 1; // Starting speed
+      const maxLevel = 50; // Game ends at Level 50
+      let matrixSpeed = 1; // Slowed down matrix rain
       const matrixColors = [
         "#00ff00",
-        "#00ffcc",
+        "#33ff33",
         "#66ff66",
-        "#ccff00",
-        "#00ccff",
-        "#ff00cc",
-        "#ffcc00",
-        "#ff3300",
-        "#00cc00",
-        "#6600ff",
+        "#99ff99",
+        "#ccffcc",
       ];
       let currentColorIndex = 0;
 
       const matrixCharacters =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-      let matrixFontSize = 14;
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()*&^%";
+
+      let matrixFontSize = 16; // Increased font size for better visibility
       let matrixColumns;
       let matrixDrops;
 
+      // Handle Device Pixel Ratio for crisp rendering
+      function adjustCanvasSize() {
+        const dpr = window.devicePixelRatio || 1;
+        // Adjust matrixCanvas
+        matrixCanvas.width = matrixCanvas.clientWidth * dpr;
+        matrixCanvas.height = matrixCanvas.clientHeight * dpr;
+        matrixCtx.scale(dpr, dpr);
+        // Adjust gameCanvas
+        gameCanvas.width = gameCanvas.clientWidth * dpr;
+        gameCanvas.height = gameCanvas.clientHeight * dpr;
+        ctx.scale(dpr, dpr);
+      }
+
       function resizeCanvas() {
         const container = document.getElementById('gameContainer');
-        gameCanvas.width = container.clientWidth;
-        gameCanvas.height = container.clientHeight;
-        matrixCanvas.width = container.clientWidth;
-        matrixCanvas.height = container.clientHeight;
+        // Update canvas styles to 100%
+        matrixCanvas.style.width = '100%';
+        matrixCanvas.style.height = '100%';
+        gameCanvas.style.width = '100%';
+        gameCanvas.style.height = '100%';
+
+        // Adjust canvas pixel sizes
+        adjustCanvasSize();
 
         // Update matrix settings
-        matrixFontSize = matrixCanvas.width / 75;
-        matrixColumns = Math.floor(matrixCanvas.width / matrixFontSize);
-        matrixDrops = Array(matrixColumns).fill(0);
+        matrixFontSize = matrixCanvas.clientWidth / 80; // Adjusted for better scaling
+        matrixColumns = Math.floor(matrixCanvas.clientWidth / matrixFontSize);
+        matrixDrops = Array(matrixColumns).fill(1); // Start drops at y=1
 
         // Update player position based on new canvas size
-        player.x = gameCanvas.width / 2 - player.width / 2;
-        player.y = gameCanvas.height - player.height - 10;
+        player.x = gameCanvas.clientWidth / 2 - player.width / 2;
+        player.y = gameCanvas.clientHeight - player.height - 10;
       }
       window.addEventListener('resize', resizeCanvas);
       resizeCanvas();
 
       function drawMatrix() {
-        // Darken the background to create the trailing effect
-        matrixCtx.fillStyle = "rgba(0, 0, 0, 0.05)";
-        matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+        // Semi-transparent background to create trail effect
+        matrixCtx.fillStyle = "rgba(0, 0, 0, 0.02)"; // Reduced opacity for slower trail
+        matrixCtx.fillRect(0, 0, matrixCanvas.clientWidth, matrixCanvas.clientHeight);
 
         // Set the matrix text color
         matrixCtx.fillStyle = matrixColors[currentColorIndex];
         matrixCtx.font = `${matrixFontSize}px monospace`;
 
         // Loop over each column
-        for (let x = 0; x < matrixColumns; x++) {
+        for (let i = 0; i < matrixColumns; i++) {
           const text = matrixCharacters.charAt(
             Math.floor(Math.random() * matrixCharacters.length)
           );
           // Draw the text character
-          matrixCtx.fillText(
-            text,
-            x * matrixFontSize,
-            matrixDrops[x] * matrixFontSize
-          );
+          matrixCtx.fillText(text, i * matrixFontSize, matrixDrops[i] * matrixFontSize);
 
-          // Randomly reset the drop to create longer streams
-          if (
-            matrixDrops[x] * matrixFontSize > matrixCanvas.height &&
-            Math.random() > 0.99 // Lowered the probability to slow down resets
-          ) {
-            matrixDrops[x] = 0;
+          // Reset the drop to the top randomly after it has crossed the screen
+          if (matrixDrops[i] * matrixFontSize > matrixCanvas.clientHeight && Math.random() > 0.975) {
+            matrixDrops[i] = 0;
           }
 
-          // Increment the y position
-          matrixDrops[x] += matrixSpeed;
+          // Increment the y coordinate based on matrixSpeed
+          matrixDrops[i] += matrixSpeed;
         }
       }
 
       function changeMatrixColor() {
         currentColorIndex = (currentColorIndex + 1) % matrixColors.length;
       }
-      setInterval(changeMatrixColor, 7000); // Increased interval for slower color changes
+      setInterval(changeMatrixColor, 10000); // Slower color changes for enhanced effect
 
       function createInvaders() {
         invaders = [];
@@ -355,8 +416,8 @@
 
             // Different shapes for aliens
             const shapeType = Math.floor(Math.random() * 4);
-            let width = gameCanvas.width / 25;
-            let height = gameCanvas.height / 25;
+            let width = gameCanvas.clientWidth / 25;
+            let height = gameCanvas.clientHeight / 25;
 
             invaders.push({
               x: j * (width + 10) + 50 + staggerOffset,
@@ -510,7 +571,7 @@
       }
 
       function drawExplosion(x, y) {
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 20; i++) { // Increased debris for a more noticeable explosion
           debris.push({
             x: x,
             y: y,
@@ -614,10 +675,10 @@
 
         // Move invader bullets downward
         invaderBullets.forEach(
-          (bullet) => (bullet.y += 4 * speedMultiplier) // Increased speed for invader bullets
+          (bullet) => (bullet.y += 4 * speedMultiplier) // Adjusted speed multiplier
         );
         invaderBullets = invaderBullets.filter(
-          (bullet) => bullet.y < gameCanvas.height
+          (bullet) => bullet.y < gameCanvas.clientHeight
         );
       }
 
@@ -628,7 +689,7 @@
           if (invader.alive) {
             invader.x += invaderDirection * speedMultiplier;
             if (
-              invader.x > gameCanvas.width - invader.width ||
+              invader.x > gameCanvas.clientWidth - invader.width ||
               invader.x < 0
             ) {
               shiftDown = true;
@@ -652,10 +713,10 @@
 
       function movePlayer() {
         if (leftKey && player.x > 0) player.x -= 5;
-        if (rightKey && player.x < gameCanvas.width - player.width)
+        if (rightKey && player.x < gameCanvas.clientWidth - player.width)
           player.x += 5;
         if (upKey && player.y > 0) player.y -= 5;
-        if (downKey && player.y < gameCanvas.height - player.height)
+        if (downKey && player.y < gameCanvas.clientHeight - player.height)
           player.y += 5;
       }
 
@@ -723,10 +784,15 @@
           }
         });
         if (invaders.every((invader) => !invader.alive)) {
-          speedMultiplier += 0.3; // Increase speed more noticeably
-          createInvaders();
-          level++;
-          levelElement.textContent = `Level: ${level}`;
+          if (level >= maxLevel) {
+            endGame(true); // Victory
+          } else {
+            speedMultiplier += 0.2; // Increment speed
+            matrixSpeed += 0.1; // Increment matrix rain speed
+            createInvaders();
+            level++;
+            levelElement.textContent = `Level: ${level}`;
+          }
         }
       }
 
@@ -766,26 +832,39 @@
         scoreElement.textContent = `Score: ${score}`;
         shipsElement.textContent = `Ships: ${ships}`;
         if (ships <= 0) {
-          gameOver = true;
-          gameOverSound.currentTime = 0;
-          gameOverSound.play().catch((error) => {
-            console.error('Error playing game over sound:', error);
-          });
-          showGameOverMessage();
-          setTimeout(() => {
-            location.reload(); // Reload the game to reset everything
-          }, 3000);
+          gameOver = true; // Set game over flag
         } else {
           setTimeout(() => {
             player.alive = true;
-            player.x = gameCanvas.width / 2 - player.width / 2;
-            player.y = gameCanvas.height - player.height - 10;
+            player.x = gameCanvas.clientWidth / 2 - player.width / 2;
+            player.y = gameCanvas.clientHeight - player.height - 10;
             player.shieldActive = false; // Reset shield status
             player.shieldHits = 3; // Reset shield hits
             updateShieldBar(); // Update the shield bar
             canShoot = true; // Allow shooting again
           }, 1000);
         }
+      }
+
+      function endGame(victoryStatus) {
+        canShoot = false;
+        if (victoryStatus) {
+          victory = true;
+          victorySound.currentTime = 0;
+          victorySound.play().catch((error) => {
+            console.error('Error playing victory sound:', error);
+          });
+          showVictoryMessage();
+        } else {
+          gameOverSound.currentTime = 0;
+          gameOverSound.play().catch((error) => {
+            console.error('Error playing game over sound:', error);
+          });
+          showGameOverMessage();
+        }
+        setTimeout(() => {
+          location.reload(); // Reload the game to reset everything
+        }, 5000); // Allows 5 seconds for explosion and message
       }
 
       function showGameOverMessage() {
@@ -799,10 +878,22 @@
         }, 5000);
       }
 
+      function showVictoryMessage() {
+        victoryMessage.style.display = "block";
+        // Ensure the victory message is centered
+        victoryMessage.style.top = "50%";
+        victoryMessage.style.left = "50%";
+        victoryMessage.style.transform = "translate(-50%, -50%)";
+        setTimeout(() => {
+          victoryMessage.style.display = "none";
+        }, 5000);
+      }
+
       function restartGame() {
         ships = 3;
         score = 0;
-        speedMultiplier = 0.5; // Reset speed multiplier to initial value
+        speedMultiplier = 1; // Reset speed multiplier to initial value
+        matrixSpeed = 1; // Reset matrix rain speed
         player.alive = true;
         player.shieldActive = false; // Reset shield status
         player.shieldHits = 3; // Reset shield hits
@@ -815,9 +906,11 @@
         downKey = false;
         spaceKey = false;
         canShoot = true;
-        gameOverMessage.style.display = "none";
-        createInvaders();
         gameOver = false;
+        victory = false;
+        gameOverMessage.style.display = "none";
+        victoryMessage.style.display = "none";
+        createInvaders();
         scoreElement.textContent = `Score: ${score}`;
         shipsElement.textContent = `Ships: ${ships}`;
         level = 1; // Reset level to 1
@@ -941,7 +1034,7 @@
       }
 
       function gameLoop() {
-        ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+        ctx.clearRect(0, 0, gameCanvas.clientWidth, gameCanvas.clientHeight);
         drawMatrix();
         drawPlayer();
         movePlayer();
@@ -953,7 +1046,13 @@
         checkCollisions();
         checkPlayerHit();
         updateShieldBar();
-        requestAnimationFrame(gameLoop);
+        
+        // Continue the loop if the game is not over or if the explosion is still active
+        if ((!gameOver && !victory) || (gameOver && player.explosionTime > 0)) {
+          requestAnimationFrame(gameLoop);
+        } else if (gameOver && player.explosionTime <= 0) {
+          endGame(false); // Trigger game over after explosion
+        }
       }
 
       let gameStarted = false;
@@ -974,3 +1073,4 @@
     </script>
   </body>
 </html>
+
