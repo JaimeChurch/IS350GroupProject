@@ -4,7 +4,7 @@
     <!-- Meta and Title -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Western Hangman - Responsive Edition</title>
+    <title>Western Hangman - Enhanced Edition</title>
     <!-- Fonts and Styles -->
     <link href="https://fonts.googleapis.com/css2?family=Fredericka+the+Great&display=swap" rel="stylesheet">
     <style>
@@ -16,13 +16,106 @@
             --background-gradient: linear-gradient(to bottom, #87CEEB, #ffcc70 30%, #ff914d 80%, #a0522d);
         }
 
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
         body {
             font-family: var(--primary-font);
             background: var(--background-gradient);
             color: #333;
             text-align: center;
-            margin: 0;
-            padding: 20px;
+            position: relative;
+        }
+
+        /* Rising Sun */
+        .sun {
+            position: absolute;
+            bottom: -150px;
+            right: 50px; /* Moved in from the right edge */
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle at center, #FFD700, #FFA500);
+            border-radius: 50%;
+            animation: rise 10s forwards;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
+            z-index: -1;
+        }
+
+        @keyframes rise {
+            0% {
+                bottom: -150px;
+                right: 50px;
+            }
+            100% {
+                bottom: calc(100% - 150px);
+                right: 50px;
+            }
+        }
+
+        /* Clouds */
+        .cloud {
+            position: absolute;
+            top: 50px;
+            background: #fff;
+            border-radius: 50px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            animation: float 60s linear infinite;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+            width: 100px;
+            height: 60px;
+            border-radius: 50%;
+        }
+
+        .cloud::before {
+            top: -30px;
+            left: 30px;
+        }
+
+        .cloud::after {
+            top: -20px;
+            left: -30px;
+        }
+
+        @keyframes float {
+            from {
+                transform: translateX(-200px);
+            }
+            to {
+                transform: translateX(100vw);
+            }
+        }
+
+        /* Cloud Positions */
+        .cloud1 {
+            width: 120px;
+            height: 70px;
+            left: -150px;
+            animation-delay: 0s;
+        }
+
+        .cloud2 {
+            width: 180px;
+            height: 100px;
+            left: -250px;
+            top: 100px;
+            animation-delay: 20s;
+        }
+
+        .cloud3 {
+            width: 150px;
+            height: 80px;
+            left: -200px;
+            top: 150px;
+            animation-delay: 40s;
         }
 
         /* Title Styling */
@@ -83,7 +176,7 @@
         }
 
         /* Reset Button */
-        #resetButton {
+        #resetButton, #homeButton {
             display: none;
             padding: 10px 20px;
             font-size: 1em;
@@ -94,8 +187,9 @@
             border-radius: 12px;
             box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.5);
             transition: background-color 0.3s;
+            margin: 10px;
         }
-        #resetButton:hover {
+        #resetButton:hover, #homeButton:hover {
             background-color: #8b0000;
         }
 
@@ -106,6 +200,8 @@
             align-items: flex-end;
             flex-wrap: wrap;
             margin-top: 30px;
+            position: relative;
+            z-index: 1;
         }
 
         /* Building Styling */
@@ -125,18 +221,16 @@
             font-size: 1.2em;
             background-image: linear-gradient(#8b5a2b 20px, transparent 20px);
             background-size: 100% 60px;
+            position: relative;
         }
 
-        /* Saloon Building */
-        .saloon {
+        /* Additional Building Variants */
+        .bank {
             background-color: #a0522d;
         }
 
-        /* Hotel Building with A-Frame Roof */
-        .hotel {
-            background-color: #8b5a2b;
-            padding-top: 30px;
-            position: relative;
+        .general-store {
+            background-color: #cd853f;
         }
 
         /* Roof Styling for A-Frame */
@@ -157,6 +251,8 @@
             color: #f4e4c3;
             padding: 12px;
             border-bottom: 3px solid #2d1e12;
+            font-size: 1.4em;
+            text-shadow: 2px 2px #000;
         }
 
         .window {
@@ -165,6 +261,7 @@
             background-color: #f4e4c3;
             border: 3px solid #3e2f23;
             margin: 15px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
 
         .door {
@@ -174,19 +271,11 @@
             border: 3px solid #2d1e12;
             margin-top: auto;
             margin-bottom: 20px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
         }
 
-        /* Ground Styling */
-        .ground {
-            position: relative;
-            width: 100%;
-            height: 50px;
-            background: linear-gradient(to top, #c19a6b, #d2b48c 60%);
-            margin-top: 30px;
-        }
-
-        /* Cactus and Bushes Styling */
-        .cactus, .bush {
+        /* Cactus Styling */
+        .cactus {
             position: absolute;
             bottom: 5%;
             width: 60px;
@@ -196,7 +285,7 @@
             box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.5);
         }
 
-        .cactus::before, .cactus::after, .bush::before, .bush::after {
+        .cactus::before, .cactus::after {
             content: "";
             position: absolute;
             width: 30px;
@@ -215,26 +304,34 @@
             top: 30px;
         }
 
-        .bush {
-            height: 80px;
-            width: 90px;
+        /* Rock Styling */
+        .rock {
+            position: absolute;
             bottom: 5%;
-            background: #2E8B57;
-            border-radius: 50%;
+            width: 80px;
+            height: 40px;
+            background: #8B4513;
+            border-radius: 40px 40px 10px 10px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
         }
 
-        .bush::before {
-            left: -20px;
-            top: 10px;
-            width: 40px;
-            height: 60px;
+        /* Positioning Cacti and Rocks */
+        .cactus.cactus1 {
+            left: 10%;
         }
 
-        .bush::after {
-            right: -20px;
-            top: 20px;
-            width: 40px;
-            height: 60px;
+        .cactus.cactus2 {
+            right: 15%;
+        }
+
+        .rock.rock1 {
+            left: 25%;
+            bottom: 3%;
+        }
+
+        .rock.rock2 {
+            right: 20%;
+            bottom: 4%;
         }
 
         /* Start Page Styling */
@@ -245,7 +342,18 @@
             justify-content: center;
             min-height: calc(100vh - 40px);
             padding: 20px;
-            background: var(--background-gradient);
+            background: transparent;
+            position: relative;
+        }
+
+        .town-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 1000px;
+            margin: 20px auto;
         }
 
         .big-title {
@@ -270,7 +378,7 @@
             max-width: 800px;
             color: #333;
             margin: 20px;
-            background-color: #fff3e0;
+            background-color: rgba(255, 243, 224, 0.9);
             padding: 30px;
             border-radius: 20px;
             border: 2px solid var(--primary-color);
@@ -295,69 +403,123 @@
             transform: scale(1.05);
         }
 
-        /* Media Queries for Smaller Screens */
+        /* Responsive Styling */
         @media screen and (max-width: 768px) {
             h1 {
-                font-size: 2.5em;
+                font-size: 2.2em;
             }
 
             #wordDisplay {
-                font-size: 1.8em;
+                font-size: 1.6em;
             }
 
             input, button {
                 font-size: 0.9em;
+                padding: 8px;
             }
 
             #message, #wrongLetters, #wrongGuesses {
                 font-size: 1em;
             }
 
-            .building {
-                width: 45%;
-                margin: 10px auto;
+            /* Hide buildings and decorations on smaller screens */
+            .building, .cactus, .rock, .cloud {
+                display: none;
             }
 
             .game-container {
-                flex-direction: row;
-                flex-wrap: wrap;
                 justify-content: center;
+            }
+
+            .town-container {
+                display: none;
             }
         }
 
         @media screen and (max-width: 480px) {
             h1 {
-                font-size: 2em;
+                font-size: 1.8em;
             }
 
             #wordDisplay {
-                font-size: 1.5em;
+                font-size: 1.4em;
             }
 
             input, button {
                 font-size: 0.8em;
+                padding: 6px;
             }
 
             #message, #wrongLetters, #wrongGuesses {
                 font-size: 0.9em;
             }
 
-            .building {
-                width: 90%;
-                margin: 10px auto;
+            /* Hide buildings and decorations on even smaller screens */
+            .building, .cactus, .rock, .cloud {
+                display: none;
             }
 
             .game-container {
                 flex-direction: column;
                 align-items: center;
             }
+
+            .town-container {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Rising Sun -->
+    <div class="sun"></div>
+
+    <!-- Clouds -->
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+    <div class="cloud cloud3"></div>
+
     <!-- Start Page -->
     <div id="startPage">
         <div class="big-title">Western Hangman</div>
+
+        <!-- Town on Start Screen -->
+        <div class="town-container">
+            <!-- Saloon Building -->
+            <div class="building saloon">
+                <div class="sign">Saloon</div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="door"></div>
+            </div>
+
+            <!-- Bank Building -->
+            <div class="building bank">
+                <div class="roof"></div>
+                <div class="sign">Bank</div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="door"></div>
+            </div>
+
+            <!-- General Store Building -->
+            <div class="building general-store">
+                <div class="sign">General Store</div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="door"></div>
+            </div>
+
+            <!-- Hotel Building -->
+            <div class="building hotel">
+                <div class="roof"></div>
+                <div class="sign">Hotel</div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="door"></div>
+            </div>
+        </div>
+
         <div id="instructions">
             <p>Welcome to Western Hangman! In this classic game, you’ll try to guess the hidden word by entering one letter at a time. Be careful, though! For each incorrect guess, a part of the hangman will appear. You have 6 tries to guess the word correctly before the game ends.</p>
             <p>To play, enter a letter and click 'Guess.' Good luck, partner!</p>
@@ -390,7 +552,11 @@
             </div>
         </div>
 
-        <div class="ground"></div>
+        <!-- Cacti and Rocks -->
+        <div class="cactus cactus1"></div>
+        <div class="cactus cactus2"></div>
+        <div class="rock rock1"></div>
+        <div class="rock rock2"></div>
 
         <p id="wordDisplay">_ _ _ _</p>
         <p id="message"></p>
@@ -399,6 +565,8 @@
         <p id="wrongGuesses">Wrong Guesses: <span>0</span></p>
         <p id="wrongLetters">Wrong Letters: </p>
         <button id="resetButton" onclick="resetGame()">Reset Game</button>
+        <!-- Home Button -->
+        <button id="homeButton" onclick="goHome()">Home</button>
     </div>
 
     <!-- Background Music Audio Element -->
@@ -455,6 +623,7 @@
             document.getElementById("wrongLetters").innerText = "Wrong Letters: ";
             document.getElementById("message").innerText = "";
             document.getElementById("resetButton").style.display = "none";
+            document.getElementById("homeButton").style.display = "inline-block";
             document.getElementById("guessInput").disabled = false;
             clearCanvas();
         }
@@ -520,6 +689,14 @@
                 console.error("Background music playback failed:", error);
             });
             initializeGame();
+        }
+
+        function goHome() {
+            document.getElementById("gamePage").style.display = "none";
+            document.getElementById("startPage").style.display = "flex";
+            let backgroundMusic = document.getElementById("backgroundMusic");
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
         }
 
         const canvas = document.getElementById("hangmanCanvas");
