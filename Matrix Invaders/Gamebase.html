@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Matrix Invaders</title>
     <style>
-      /* [Your existing CSS remains unchanged] */
+      /* General Styling */
       body {
         margin: 0;
         overflow: hidden;
@@ -18,8 +18,10 @@
       }
       #gameContainer {
         position: relative;
-        width: 1024px;
-        height: 768px;
+        width: 100%;
+        height: 100%;
+        max-width: 1024px;
+        max-height: 768px;
         border: 3px solid #00ff00;
         box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
         overflow: hidden;
@@ -28,6 +30,8 @@
         position: absolute;
         top: 0;
         left: 0;
+        width: 100%; /* Make canvas responsive */
+        height: 100%;
       }
       #matrixCanvas {
         z-index: 0;
@@ -35,14 +39,16 @@
       #gameCanvas {
         z-index: 1;
       }
+      /* HUD Styling */
       #score,
       #ships,
       #level {
         position: absolute;
         color: #00ff00;
-        font-size: 24px;
+        font-size: 1.5vw;
         z-index: 2;
         font-family: "Courier New", Courier, monospace;
+        text-shadow: 0 0 5px #00ff00;
       }
       #score {
         top: 10px;
@@ -56,6 +62,7 @@
         top: 10px;
         left: 10px;
       }
+      /* Start Screen Styling */
       #startScreen {
         display: flex;
         justify-content: center;
@@ -70,103 +77,132 @@
         font-family: "Courier New", Courier, monospace;
         flex-direction: column;
         z-index: 3;
+        animation: fadeIn 2s;
+        text-align: center; /* Center content */
       }
       #startScreen h1 {
-        font-size: 70px;
+        font-size: 5vw;
         color: #00ff00;
         text-shadow: 0px 0px 10px lime, 0px 0px 20px green;
+        animation: pulse 2s infinite;
+        margin: 0; /* Remove default margin */
       }
+      #controls {
+        font-size: 2vw;
+        color: #00ffcc;
+        margin-top: 20px;
+      }
+      #startScreen p {
+        font-size: 2vw;
+        color: #00ffcc;
+        margin-top: 20px;
+      }
+      /* Game Over Message Styling */
       #gameOverMessage {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         color: #ff0000;
-        font-size: 50px;
+        font-size: 4vw;
         display: none;
         animation: pulse 2s infinite, colorChange 5s infinite;
         z-index: 4;
         font-family: "Courier New", Courier, monospace;
+        text-shadow: 0 0 10px #ff0000;
+        text-align: center; /* Center text */
+        margin: 0; /* Ensure no default margins */
       }
-      @keyframes pulse {
-        0% {
-          transform: translate(-50%, -50%) scale(1);
-          opacity: 1;
-        }
-        50% {
-          transform: translate(-50%, -50%) scale(1.2);
-          opacity: 0.7;
-        }
-        100% {
-          transform: translate(-50%, -50%) scale(1);
-          opacity: 1;
-        }
-      }
-      #controls {
-        font-size: 20px;
-        color: #00ffcc;
-        margin-top: 20px;
-      }
-
-      /* Shield bar styling */
+      /* Shield Bar Styling */
       #shieldBarContainer {
         position: absolute;
         bottom: 40px;
         left: 10px;
         width: 200px;
-        border: 2px solid #00ffcc; /* Border around shield status bar */
+        border: 2px solid #00ffcc;
         padding: 5px;
         background-color: rgba(0, 0, 0, 0.7);
         text-align: center;
         color: #00ffcc;
-        display: none; /* Hide shield bar by default */
+        display: none;
       }
-
       #shieldBar {
         width: 100%;
         height: 20px;
-        display: flex; /* Use flex to align hits properly */
+        display: flex;
         position: relative;
+        margin-top: 5px;
       }
-
       .hit {
         height: 20px;
-        background-color: #00ff00; /* Color for remaining hits */
-        flex: 1; /* Each hit takes equal space */
+        background-color: #00ff00;
+        flex: 1;
+        box-shadow: inset 0 0 5px #00ff00;
       }
-
       .hit-divider {
-        width: 2px; /* Divider width */
-        background-color: #00ffcc; /* Divider color */
+        width: 2px;
+        background-color: #00ffcc;
         height: 20px;
-        display: inline-block;
+      }
+      /* Animations */
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 0.7;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes colorChange {
+        0% {
+          color: #ff0000;
+        }
+        50% {
+          color: #ffff00;
+        }
+        100% {
+          color: #ff0000;
+        }
       }
     </style>
   </head>
   <body>
     <div id="gameContainer">
-      <canvas id="matrixCanvas" width="1024" height="768"></canvas>
-      <canvas id="gameCanvas" width="1024" height="768"></canvas>
+      <canvas id="matrixCanvas"></canvas>
+      <canvas id="gameCanvas"></canvas>
       <div id="score">Score: 0</div>
       <div id="ships">Ships: 3</div>
       <div id="level">Level: 1</div>
       <div id="startScreen">
         <h1>MATRIX INVADERS</h1>
-        <p>Press ENTER to Start</p>
         <div id="controls">
           Controls:<br />
           Arrow Keys: Move<br />
           Space: Fire<br />
           S: Activate Shield
         </div>
+        <p>Press ENTER to start game</p>
       </div>
       <div id="gameOverMessage">YOU ARE DEAD!</div>
       <div id="shieldBarContainer">
         <!-- Shield bar container -->
         <div>SHIELD</div>
-        <!-- Label for shield -->
-        <div id="shieldBar"></div>
         <!-- Shield bar element -->
+        <div id="shieldBar"></div>
       </div>
     </div>
 
@@ -178,8 +214,8 @@
       const levelElement = document.getElementById("level");
       const startScreen = document.getElementById("startScreen");
       const gameOverMessage = document.getElementById("gameOverMessage");
-      const shieldBar = document.getElementById("shieldBar"); // Get shield bar element
-      const shieldBarContainer = document.getElementById("shieldBarContainer"); // Get shield bar container
+      const shieldBar = document.getElementById("shieldBar");
+      const shieldBarContainer = document.getElementById("shieldBarContainer");
 
       const matrixCanvas = document.getElementById("matrixCanvas");
       const matrixCtx = matrixCanvas.getContext("2d");
@@ -192,7 +228,7 @@
       // Load background music
       const backgroundMusic = new Audio('sound/gamemusic.wav');
       backgroundMusic.loop = true;
-      backgroundMusic.volume = 0.5; // Adjust volume as needed
+      backgroundMusic.volume = 0.5;
 
       // Set preload for all sounds
       shootSound.preload = 'auto';
@@ -205,8 +241,8 @@
         invaderBullets = [],
         debris = [];
       let player = {
-        x: 370,
-        y: 550,
+        x: 0,
+        y: 0,
         width: 50,
         height: 30,
         alive: true,
@@ -224,8 +260,8 @@
         ships = 3,
         level = 1,
         gameOver = false;
-      let speedMultiplier = 1;
-      let matrixSpeed = 0.2;
+      let speedMultiplier = 0.5; // Start slower
+      let matrixSpeed = 0.03; // Significantly slower matrix code
       const matrixColors = [
         "#00ff00",
         "#00ffcc",
@@ -242,40 +278,59 @@
 
       const matrixCharacters =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-      const matrixFontSize = 10;
-      const matrixColumns = Math.floor(matrixCanvas.width / matrixFontSize);
-      const matrixDrops = Array(matrixColumns).fill(0);
+      let matrixFontSize = 14;
+      let matrixColumns;
+      let matrixDrops;
+
+      function resizeCanvas() {
+        const container = document.getElementById('gameContainer');
+        gameCanvas.width = container.clientWidth;
+        gameCanvas.height = container.clientHeight;
+        matrixCanvas.width = container.clientWidth;
+        matrixCanvas.height = container.clientHeight;
+
+        // Update matrix settings
+        matrixFontSize = matrixCanvas.width / 75;
+        matrixColumns = Math.floor(matrixCanvas.width / matrixFontSize);
+        matrixDrops = Array(matrixColumns).fill(0);
+
+        // Update player position based on new canvas size
+        player.x = gameCanvas.width / 2 - player.width / 2;
+        player.y = gameCanvas.height - player.height - 10;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
 
       function drawMatrix() {
-        // Darken the background with a slight opacity to create the trailing effect
+        // Darken the background to create the trailing effect
         matrixCtx.fillStyle = "rgba(0, 0, 0, 0.05)";
         matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
 
-        // Set the matrix text color to the signature green shade
-        matrixCtx.fillStyle = "#00ff00";
-        matrixCtx.font = `${matrixFontSize}px monospace`; // Use monospace font for better effect
+        // Set the matrix text color
+        matrixCtx.fillStyle = matrixColors[currentColorIndex];
+        matrixCtx.font = `${matrixFontSize}px monospace`;
 
         // Loop over each column
         for (let x = 0; x < matrixColumns; x++) {
           const text = matrixCharacters.charAt(
             Math.floor(Math.random() * matrixCharacters.length)
           );
-          // Draw the text character at the specified x and y position
+          // Draw the text character
           matrixCtx.fillText(
             text,
             x * matrixFontSize,
             matrixDrops[x] * matrixFontSize
           );
 
-          // Randomly reset the drop back to the top after it passes the screen
+          // Randomly reset the drop to create longer streams
           if (
             matrixDrops[x] * matrixFontSize > matrixCanvas.height &&
-            Math.random() > 0.975
+            Math.random() > 0.99 // Lowered the probability to slow down resets
           ) {
             matrixDrops[x] = 0;
           }
 
-          // Increment the y position for the next frame to create the falling effect
+          // Increment the y position
           matrixDrops[x] += matrixSpeed;
         }
       }
@@ -283,7 +338,7 @@
       function changeMatrixColor() {
         currentColorIndex = (currentColorIndex + 1) % matrixColors.length;
       }
-      setInterval(changeMatrixColor, 5000);
+      setInterval(changeMatrixColor, 7000); // Increased interval for slower color changes
 
       function createInvaders() {
         invaders = [];
@@ -300,26 +355,12 @@
 
             // Different shapes for aliens
             const shapeType = Math.floor(Math.random() * 4);
-            let width, height;
-
-            if (shapeType === 0) {
-              // Circle
-              width = height = 40;
-            } else if (shapeType === 1) {
-              // Triangle
-              width = 40;
-              height = 40;
-            } else if (shapeType === 2) {
-              // Square
-              width = height = 40;
-            } else {
-              // Diamond
-              width = height = 40;
-            }
+            let width = gameCanvas.width / 25;
+            let height = gameCanvas.height / 25;
 
             invaders.push({
-              x: j * 60 + 50 + staggerOffset,
-              y: i * 50 + 20,
+              x: j * (width + 10) + 50 + staggerOffset,
+              y: i * (height + 10) + 20,
               width: width,
               height: height,
               color: color,
@@ -335,17 +376,43 @@
 
       function drawPlayer() {
         if (player.alive) {
+          // Draw ship body
           ctx.fillStyle = "#00ffcc";
+          ctx.strokeStyle = "#00ffff";
+          ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.moveTo(player.x + player.width / 2, player.y);
           ctx.lineTo(player.x, player.y + player.height);
+          ctx.lineTo(player.x + player.width / 4, player.y + player.height);
+          ctx.lineTo(player.x + player.width / 2, player.y + player.height / 2);
+          ctx.lineTo(player.x + (3 * player.width) / 4, player.y + player.height);
           ctx.lineTo(player.x + player.width, player.y + player.height);
           ctx.closePath();
           ctx.fill();
+          ctx.stroke();
+
+          // Add shadow
+          ctx.shadowColor = "#00ffff";
+          ctx.shadowBlur = 20;
+
+          // Draw cockpit
+          ctx.fillStyle = "#0000ff";
+          ctx.beginPath();
+          ctx.arc(
+            player.x + player.width / 2,
+            player.y + player.height / 2,
+            player.width / 8,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+
+          // Reset shadow
+          ctx.shadowBlur = 0;
 
           // Draw shield if active
           if (player.shieldActive) {
-            ctx.fillStyle = "rgba(0, 0, 255, 0.5)";
+            ctx.fillStyle = "rgba(0, 0, 255, 0.3)";
             ctx.beginPath();
             ctx.arc(
               player.x + player.width / 2,
@@ -356,15 +423,6 @@
             );
             ctx.fill();
           }
-
-          ctx.fillStyle = "#007f7f";
-          ctx.fillRect(player.x - 10, player.y + player.height - 10, 10, 20);
-          ctx.fillRect(
-            player.x + player.width,
-            player.y + player.height - 10,
-            10,
-            20
-          );
         } else if (player.explosionTime > 0) {
           drawExplosion(
             player.x + player.width / 2,
@@ -377,7 +435,20 @@
       function drawInvaders() {
         invaders.forEach((invader) => {
           if (invader.alive) {
-            ctx.fillStyle = invader.color;
+            // Gradient fill for invaders
+            const gradient = ctx.createRadialGradient(
+              invader.x + invader.width / 2,
+              invader.y + invader.height / 2,
+              5,
+              invader.x + invader.width / 2,
+              invader.y + invader.height / 2,
+              20
+            );
+            gradient.addColorStop(0, invader.color);
+            gradient.addColorStop(1, "#000");
+
+            ctx.fillStyle = gradient;
+
             if (invader.type === 0) {
               // Circle
               ctx.beginPath();
@@ -417,29 +488,13 @@
               ctx.fill();
             }
 
-            // Draw tentacles
-            ctx.strokeStyle = "red";
-            ctx.lineWidth = 3;
-            for (let k = 0; k < 3; k++) {
-              ctx.beginPath();
-              ctx.moveTo(
-                invader.x + invader.width / 2,
-                invader.y + invader.height
-              );
-              ctx.lineTo(
-                invader.x + invader.width / 2 + (Math.random() * 20 - 10),
-                invader.y + invader.height + Math.random() * 20
-              );
-              ctx.stroke();
-            }
-
             // Draw eyes
             ctx.fillStyle = invader.eyeColor;
             ctx.beginPath();
             ctx.arc(
               invader.x + invader.width / 2,
               invader.y + invader.height / 2,
-              5,
+              invader.width / 10,
               0,
               Math.PI * 2
             );
@@ -455,21 +510,17 @@
       }
 
       function drawExplosion(x, y) {
-        ctx.fillStyle = "orange";
-        ctx.beginPath();
-        ctx.arc(x, y, 30, 0, Math.PI * 2);
-        ctx.fill();
-
-        if (Math.random() < 0.1) {
+        for (let i = 0; i < 10; i++) {
           debris.push({
             x: x,
             y: y,
-            dx: (Math.random() - 0.5) * 8,
-            dy: (Math.random() - 0.5) * 8,
+            dx: (Math.random() - 0.5) * 10,
+            dy: (Math.random() - 0.5) * 10,
             size: Math.random() * 5 + 2,
             color: ["#FF4500", "#FF6347", "#FFA500"][
               Math.floor(Math.random() * 3)
             ],
+            life: 30,
           });
         }
       }
@@ -480,59 +531,71 @@
           ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
           particle.x += particle.dx;
           particle.y += particle.dy;
-
-          if (
-            particle.x < 0 ||
-            particle.x > gameCanvas.width ||
-            particle.y < 0 ||
-            particle.y > gameCanvas.height
-          ) {
+          particle.life--;
+          if (particle.life <= 0) {
             debris.splice(index, 1);
           }
         });
       }
 
       function drawPlayerBullet(bullet) {
-        const gradient = ctx.createLinearGradient(
-          bullet.x,
-          bullet.y,
-          bullet.x,
-          bullet.y + bullet.height
-        );
-        gradient.addColorStop(0, "#00ff00");
-        gradient.addColorStop(1, "#ff0000");
-        ctx.fillStyle = gradient;
-
-        ctx.beginPath();
-        ctx.moveTo(bullet.x, bullet.y);
-        ctx.lineTo(bullet.x + bullet.width / 2, bullet.y - bullet.height);
-        ctx.lineTo(bullet.x + bullet.width, bullet.y);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      function drawInvaderBullet(bullet) {
+        // Create a pulsing effect
+        const pulse = Math.sin(Date.now() / 100) * 0.5 + 0.5;
         const gradient = ctx.createRadialGradient(
           bullet.x + bullet.width / 2,
-          bullet.y,
+          bullet.y + bullet.height / 2,
           0,
           bullet.x + bullet.width / 2,
-          bullet.y,
-          bullet.width
+          bullet.y + bullet.height / 2,
+          bullet.width * 2
         );
-        gradient.addColorStop(0, "#ff1493");
-        gradient.addColorStop(1, "#9400d3");
+        gradient.addColorStop(0, `rgba(255, 255, 0, ${pulse})`);
+        gradient.addColorStop(1, `rgba(255, 0, 0, ${pulse})`);
         ctx.fillStyle = gradient;
 
         ctx.beginPath();
         ctx.arc(
           bullet.x + bullet.width / 2,
           bullet.y,
-          bullet.width / 2,
+          bullet.width * 1.5,
           0,
           Math.PI * 2
         );
         ctx.fill();
+
+        // Add glow effect
+        ctx.shadowColor = "#ffff00";
+        ctx.shadowBlur = 20;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      function drawInvaderBullet(bullet) {
+        // Reoriented alien bullet design to point downward
+        const gradient = ctx.createLinearGradient(
+          bullet.x,
+          bullet.y,
+          bullet.x + bullet.width,
+          bullet.y + bullet.height
+        );
+        gradient.addColorStop(0, "#ff00ff");
+        gradient.addColorStop(0.5, "#ff69b4");
+        gradient.addColorStop(1, "#ffffff");
+        ctx.fillStyle = gradient;
+
+        ctx.beginPath();
+        // Triangle pointing downward
+        ctx.moveTo(bullet.x + bullet.width / 2, bullet.y + bullet.height);
+        ctx.lineTo(bullet.x, bullet.y);
+        ctx.lineTo(bullet.x + bullet.width, bullet.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Add glow effect
+        ctx.shadowColor = "#ff00ff";
+        ctx.shadowBlur = 15;
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
 
       function drawBullets() {
@@ -545,10 +608,14 @@
       }
 
       function moveBullets() {
-        bullets.forEach((bullet) => (bullet.y -= 5));
+        // Move player bullets upward
+        bullets.forEach((bullet) => (bullet.y -= 7));
         bullets = bullets.filter((bullet) => bullet.y > 0);
 
-        invaderBullets.forEach((bullet) => (bullet.y += 3 * speedMultiplier));
+        // Move invader bullets downward
+        invaderBullets.forEach(
+          (bullet) => (bullet.y += 4 * speedMultiplier) // Increased speed for invader bullets
+        );
         invaderBullets = invaderBullets.filter(
           (bullet) => bullet.y < gameCanvas.height
         );
@@ -560,16 +627,18 @@
         invaders.forEach((invader) => {
           if (invader.alive) {
             invader.x += invaderDirection * speedMultiplier;
-            if (invader.x > gameCanvas.width - invader.width || invader.x < 0) {
+            if (
+              invader.x > gameCanvas.width - invader.width ||
+              invader.x < 0
+            ) {
               shiftDown = true;
             }
-            // Reduce the enemy fire rate
-            if (Math.random() < 0.0005 * speedMultiplier) {
+            if (Math.random() < 0.001 * speedMultiplier) {
               invaderBullets.push({
-                x: invader.x + invader.width / 2 - 2.5,
+                x: invader.x + invader.width / 2 - 5,
                 y: invader.y + invader.height,
                 width: 10,
-                height: 10,
+                height: 20,
               });
             }
           }
@@ -593,7 +662,7 @@
       function shoot() {
         if (canShoot && player.alive) {
           bullets.push({
-            x: player.x + player.width / 2 - 2.5,
+            x: player.x + player.width / 2 - 5,
             y: player.y - 10,
             width: 10,
             height: 20,
@@ -654,7 +723,7 @@
           }
         });
         if (invaders.every((invader) => !invader.alive)) {
-          speedMultiplier += 0.2;
+          speedMultiplier += 0.3; // Increase speed more noticeably
           createInvaders();
           level++;
           levelElement.textContent = `Level: ${level}`;
@@ -709,8 +778,8 @@
         } else {
           setTimeout(() => {
             player.alive = true;
-            player.x = 370;
-            player.y = 550;
+            player.x = gameCanvas.width / 2 - player.width / 2;
+            player.y = gameCanvas.height - player.height - 10;
             player.shieldActive = false; // Reset shield status
             player.shieldHits = 3; // Reset shield hits
             updateShieldBar(); // Update the shield bar
@@ -721,6 +790,10 @@
 
       function showGameOverMessage() {
         gameOverMessage.style.display = "block";
+        // Ensure the game over message is centered
+        gameOverMessage.style.top = "50%";
+        gameOverMessage.style.left = "50%";
+        gameOverMessage.style.transform = "translate(-50%, -50%)";
         setTimeout(() => {
           gameOverMessage.style.display = "none";
         }, 5000);
@@ -729,7 +802,7 @@
       function restartGame() {
         ships = 3;
         score = 0;
-        speedMultiplier = 1; // Reset speed multiplier to initial value
+        speedMultiplier = 0.5; // Reset speed multiplier to initial value
         player.alive = true;
         player.shieldActive = false; // Reset shield status
         player.shieldHits = 3; // Reset shield hits
@@ -851,17 +924,15 @@
       function updateShieldBar() {
         shieldBar.innerHTML = ""; // Clear existing hits
         for (let i = 0; i < 3; i++) {
-          // Always create 3 increments
           const hit = document.createElement("div");
           hit.className = "hit";
           if (i < player.shieldHits) {
-            hit.style.backgroundColor = "#00ff00"; // Only show green for remaining hits
+            hit.style.backgroundColor = "#00ff00";
           } else {
-            hit.style.backgroundColor = "#ff0000"; // Show red for used hits
+            hit.style.backgroundColor = "#ff0000";
           }
           shieldBar.appendChild(hit);
           if (i < 2) {
-            // Add divider if not the last hit
             const divider = document.createElement("div");
             divider.className = "hit-divider";
             shieldBar.appendChild(divider);
@@ -881,7 +952,7 @@
         drawDebris();
         checkCollisions();
         checkPlayerHit();
-        updateShieldBar(); // Update the shield bar
+        updateShieldBar();
         requestAnimationFrame(gameLoop);
       }
 

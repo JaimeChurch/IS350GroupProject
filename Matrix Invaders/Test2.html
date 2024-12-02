@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matrix Invaders</title>
+    <style>
+      /* Global Box Sizing */
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      #gameContainer {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        max-width: 1024px;
+        max-height: 768px;
+        border: 3px solid #00ff00;
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        overflow: hidden;
+        background-color: black;
+      }
+
+      canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      #matrixCanvas {
+        z-index: 0;
+      }
+
+      #gameCanvas {
+        z-index: 1;
+      }
+
+      #score,
+      #ships,
+      #level {
+        position: absolute;
+        color: #00ff00;
+        font-size: 1.5vw;
+        z-index: 2;
+        font-family: "Courier New", Courier, monospace;
+        text-shadow: 0 0 5px #00ff00;
+      }
+
+      #score {
+        top: 10px;
+        right: 10px;
+      }
+
+      #ships {
+        top: 50px;
+        right: 10px;
+      }
+
+      #level {
+        top: 10px;
+        left: 10px;
+      }
+
+      #startScreen {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        color: white;
+        font-family: "Courier New", Courier, monospace;
+        flex-direction: column;
+        z-index: 3;
+        text-align: center;
+      }
+
+      #startScreen h1 {
+        font-size: 5vw;
+        color: #00ff00;
+        text-shadow: 0px 0px 10px lime, 0px 0px 20px green;
+        animation: pulse 2s infinite;
+      }
+
+      #startScreen p {
+        font-size: 2vw;
+        color: #00ffcc;
+      }
+
+      #gameOverMessage,
+      #victoryMessage {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ff0000;
+        font-size: 4vw;
+        display: none;
+        z-index: 4;
+        font-family: "Courier New", Courier, monospace;
+        text-shadow: 0 0 10px #ff0000;
+        text-align: center;
+      }
+
+      #victoryMessage {
+        color: #00ff00;
+        text-shadow: 0 0 10px #00ff00;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 1;
+        }
+
+        50% {
+          transform: scale(1.2);
+          opacity: 0.7;
+        }
+
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="gameContainer">
+      <canvas id="matrixCanvas"></canvas>
+      <canvas id="gameCanvas"></canvas>
+      <div id="score">Score: 0</div>
+      <div id="ships">Ships: 3</div>
+      <div id="level">Level: 1</div>
+      <div id="startScreen">
+        <h1>MATRIX INVADERS</h1>
+        <p>Press ENTER to start the game</p>
+      </div>
+      <div id="gameOverMessage">YOU ARE DEAD!</div>
+      <div id="victoryMessage">CONGRATULATIONS! YOU WIN!</div>
+    </div>
+
+    <script>
+      const gameCanvas = document.getElementById("gameCanvas");
+      const ctx = gameCanvas.getContext("2d");
+      const scoreElement = document.getElementById("score");
+      const shipsElement = document.getElementById("ships");
+      const levelElement = document.getElementById("level");
+      const startScreen = document.getElementById("startScreen");
+      const gameOverMessage = document.getElementById("gameOverMessage");
+      const victoryMessage = document.getElementById("victoryMessage");
+
+      const matrixCanvas = document.getElementById("matrixCanvas");
+      const matrixCtx = matrixCanvas.getContext("2d");
+
+      let invaders = [];
+      let bullets = [];
+      let invaderBullets = [];
+      let player = {
+        x: 0,
+        y: 0,
+        width: 50,
+        height: 30,
+        alive: true,
+      };
+      let leftKey = false;
+      let rightKey = false;
+      let spaceKey = false;
+      let score = 0;
+      let ships = 3;
+      let level = 1;
+      let gameOver = false;
+      let victory = false;
+      let speedMultiplier = 0.5;
+      const maxLevel = 50;
+      let matrixSpeed = 0.2;
+      const matrixCharacters =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      const matrixFontSize = 16;
+      let matrixColumns = 0;
+      let matrixDrops = [];
+
+      function resizeCanvas() {
+        const container = document.getElementById("gameContainer");
+        gameCanvas.width = container.clientWidth;
+        gameCanvas.height = container.clientHeight;
+        matrixCanvas.width = container.clientWidth;
+        matrixCanvas.height = container.clientHeight;
+
+        player.x = gameCanvas.width / 2 - player.width / 2;
+        player.y = gameCanvas.height - player.height - 10;
+
+        matrixColumns = Math.floor(matrixCanvas.width / matrixFontSize);
+        matrixDrops = Array(matrixColumns).fill(0);
+      }
+
+      function drawMatrix() {
+        matrixCtx.fillStyle = "rgba(0, 0, 0, 0.1)";
+        matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+        matrixCtx.fillStyle = "#00ff00";
+        matrixCtx.font = `${matrixFontSize}px monospace`;
+
+        for (let i = 0; i < matrixColumns; i++) {
+          const text = matrixCharacters.charAt(
+            Math.floor(Math.random() * matrixCharacters.length)
+          );
+          matrixCtx.fillText(
+            text,
+            i * matrixFontSize,
+            matrixDrops[i] * matrixFontSize
+          );
+
+          if (
+            matrixDrops[i] * matrixFontSize > matrixCanvas.height &&
+            Math.random() > 0.975
+          ) {
+            matrixDrops[i] = 0;
+          }
+          matrixDrops[i] += matrixSpeed;
+        }
+      }
+
+      function gameLoop() {
+        ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+        drawMatrix();
+
+        if (!gameOver && !victory) {
+          requestAnimationFrame(gameLoop);
+        }
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.code === "Enter" && !gameOver && !victory) {
+          startScreen.style.display = "none";
+          gameLoop();
+        }
+      });
+
+      function endGame(victoryStatus) {
+        if (victoryStatus) {
+          victory = true;
+          victoryMessage.style.display = "block";
+        } else {
+          gameOver = true;
+          gameOverMessage.style.display = "block";
+        }
+      }
+
+      function init() {
+        resizeCanvas();
+        drawMatrix();
+        gameLoop();
+      }
+
+      window.addEventListener("resize", resizeCanvas);
+      init();
+    </script>
+  </body>
+</html>
