@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bungee+Shade&family=Micro+5+Charted&family=Tsukimi+Rounded:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Doto:wght@651&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #8fbf44;
+            font-family: "Doto", sans-serif;
+        }
+        canvas {
+            border: 2px solid #333;
+            background-image: radial-gradient(
+                circle, 
+                #a8d64f 5.7px, 
+                #8fbf44 5.7px
+            );
+            background-size: 12px 12px;
+            image-rendering: pixelated;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+</head>
+<body>
+    <canvas id="gameCanvas" width="900" height="675"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const box = 20;
+        const borderOffset = box; // Offset to prevent spawning near the border
+        const backgroundMusic = new Audio('https://cdn.freesound.org/previews/684/684184_13228046-lq.mp3');
+        const gameOverSound = new Audio('https://cdn.freesound.org/previews/676/676810_7614679-lq.mp3');
+        const scoreSound = new Audio('https://cdn.freesound.org/previews/425/425165_2141224-lq.mp3');
+
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.2;
+        backgroundMusic.playbackRate = 1;
+        scoreSound.volume = 0.5; 
+
+        gameOverSound.loop = false;
+
+        let snake = [
+            { x: 5 * box, y: 5 * box },
+            { x: 4 * box, y: 5 * box },
+            { x: 3 * box, y: 5 * box }
+        ];
+        let food = { x: Math.floor(Math.random() * (canvas.width / box)) * box, y: Math.floor(Math.random() * (canvas.height / box)) * box };
+        let score = 0;
+        let direction = "RIGHT";
+        let changingDirection = false;
+        let gameStarted = false;
+        let gameInterval;
+        let gameOver = false;
+
+        document.addEventListener("keydown", changeDirection);
+
+        function startGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+            if (gameInterval) {
+                clearInterval(gameInterval);
+            }
+            backgroundMusic.currentTime = 0; // Restart the music
+            backgroundMusic.play();
+            snake = [
+                { x: 5 * box, y: 5 * box },
+                { x: 4 * box, y: 5 * box },
+                { x: 3 * box, y: 5 * box }
+            ];
+            food = generateFood();
+            score = 0;
+            direction = "RIGHT";
+            changingDirection = false;
+            gameStarted = true;
+            gameOver = false;
+            gameInterval = setInterval(drawGame, 110);
+        }
+
+        function loadFontsAndShowStartScreen() {
+            document.fonts.ready.then(() => {
+                showStartScreen();
+            });
+        }
+
+        function showStartScreen() {
+            ctx.fillStyle = "#000000";
+            ctx.font = "bold 40px 'Doto', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("SNAKE", canvas.width / 2, canvas.height / 3);
+            
+            ctx.font = "bold 30px 'Doto', sans-serif";
+            ctx.fillText("MOVE: ↑↓ ←→", canvas.width / 2, canvas.height / 2);
+
+            ctx.font = "bold 25px 'Doto', sans-serif";
+            ctx.fillText("Click to Start", canvas.width / 2, (canvas.height / 3) * 2);
+
+            canvas.onclick = () => {
+                if (!gameStarted) {
+                    startGame();
+                }
+            };
+        }
+
+        function showGameOverScreen() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#000000";
+            ctx.font = "bold 40px 'Doto', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("SNAKE", canvas.width / 2, canvas.height / 3);
+            
+            ctx.font = "bold 30px 'Doto', sans-serif";
+            ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+
+            ctx.font = "bold 25px 'Doto', sans-serif";
+            ctx.fillText("Click to Restart", canvas.width / 2, (canvas.height / 3) * 2);
+
+            canvas.onclick = () => {
+                if (!gameStarted) {
+                    startGame();
+                }
+            };
+        }
+
+        function changeDirection(event) {
+            if (changingDirection) return;
+            changingDirection = true;
+
+            const keyPressed = event.key;
+            if (keyPressed === "ArrowUp" && direction !== "DOWN") direction = "UP";
+            if (keyPressed === "ArrowDown" && direction !== "UP") direction = "DOWN";
+            if (keyPressed === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+            if (keyPressed === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            snake.forEach((segment) => {
+                ctx.fillStyle = "#000000";
+                drawPixelatedBlock(segment.x, segment.y);
+            });
+
+            drawFood(food.x, food.y);
+
+            let head = { ...snake[0] };
+
+            if (direction === "UP") head.y -= box;
+            if (direction === "DOWN") head.y += box;
+            if (direction === "LEFT") head.x -= box;
+            if (direction === "RIGHT") head.x += box;
+
+            // Wrap around logic
+            if (head.x < 0) head.x = canvas.width - box;
+            if (head.x >= canvas.width) head.x = 0;
+            if (head.y < 0) head.y = canvas.height - box;
+            if (head.y >= canvas.height) head.y = 0;
+
+            if (!gameOver && snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameOver = true;
+                gameStarted = false;
+                clearInterval(gameInterval);
+                backgroundMusic.pause();
+                gameOverSound.play();
+                showGameOverScreen();
+                return;
+            }
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                scoreSound.currentTime = 0; // Reset sound to the beginning
+                scoreSound.play(); // Play score sound effect
+                food = generateFood();
+            } else {
+                snake.pop();
+            }
+
+            ctx.fillStyle = "#2c3e50";
+            ctx.font = "20px 'Doto', sans-serif";
+            ctx.textAlign = "start";
+            ctx.fillText(`Score: ${score}`, 10, 30);
+
+            changingDirection = false;
+        }
+
+        function drawPixelatedBlock(x, y) {
+            const pixelSize = 4;
+            for (let px = 0; px < box; px += pixelSize) {
+                for (let py = 0; py < box; py += pixelSize) {
+                    ctx.fillRect(x + px, y + py, pixelSize - 1, pixelSize - 1);
+                }
+            }
+        }
+
+        function drawFood(x, y) {
+            const pixelSize = 4;
+            const foodPattern = [
+                [0, 1, 0],
+                [1, 1, 1],
+                [0, 1, 0]
+            ];
+
+            ctx.fillStyle = "#000000";
+            foodPattern.forEach((row, rowIndex) => {
+                row.forEach((cell, colIndex) => {
+                    if (cell) {
+                        ctx.fillRect(x + colIndex * pixelSize + 6, y + rowIndex * pixelSize + 6, pixelSize, pixelSize);
+                    }
+                });
+            });
+        }
+
+        function generateFood() {
+            let newFood;
+            while (true) {
+                newFood = {
+                    x: Math.floor(Math.random() * ((canvas.width - 2 * borderOffset) / box)) * box + borderOffset,
+                    y: Math.floor(Math.random() * ((canvas.height - 2 * borderOffset) / box)) * box + borderOffset
+                };
+                // Add epsilon comparison for snake collision check
+                if (!snake.some(segment => Math.abs(segment.x - newFood.x) < 0.001 && Math.abs(segment.y - newFood.y) < 0.001)) {
+                    break;
+                }
+            }
+            return newFood;
+        }
+
+        loadFontsAndShowStartScreen();
+    </script>
+</body>
+</html>
