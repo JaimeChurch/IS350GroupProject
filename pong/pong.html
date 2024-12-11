@@ -15,7 +15,7 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #333; color: #fff; font-family: 'Blippo', sans-serif; flex-direction: column; }
-        canvas { width: 1200px; height: 900px; border: 2px solid #fff; background: #222; border-radius: 15px; margin-top: 10px; cursor: auto; }
+        canvas { width: 900px; height: 675px; border: 2px solid #fff; background: #222; border-radius: 15px; margin-top: 10px; cursor: auto; }
         #scoreMessage {
             position: absolute;
             top: 50%;
@@ -62,7 +62,7 @@
         <div id="controlsText">▲ Up | ▼ Down | ▄▄▄▄ Pause</div>
     </div>
     <div id="scoreMessage">Player Scored!</div>
-    <canvas id="pongCanvas" width="1200" height="900"></canvas>
+    <canvas id="pongCanvas" width="900px" height="900"></canvas>
     <script>
         const canvas = document.getElementById('pongCanvas');
         const ctx = canvas.getContext('2d');
@@ -72,7 +72,7 @@
         // Background music setup
         const backgroundMusic = new Audio('https://cdn.freesound.org/previews/405/405220_2784786-lq.mp3');
         backgroundMusic.loop = true;
-        backgroundMusic.volume = 0.2; // Default volume, adjustable in code
+        backgroundMusic.volume = 0.1; // Default volume, adjustable in code
 
         const paddleWidth = 20;
         const paddleHeight = 160;
