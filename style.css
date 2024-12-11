@@ -247,7 +247,6 @@ nav {
 }
 
 #game-title:hover {
-    text-shadow: 0 0 10px #70a7bb;
     color: #64068a;
 }
 
@@ -321,23 +320,23 @@ nav {
 
 .news_wrapper {
     display: grid;
-    grid-template-columns: repeat(2,1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
 
-.latest-list{
+.latest-list {
     display: contents;
 }
 
-.latest-list li{
+.latest-list li {
     list-style: none;
     font-size: 1.2em;
     padding-left: 100px;
     padding-bottom: 10px;
 }
 
-.latest-list li a{
-text-decoration: underline;
+.latest-list li a {
+    text-decoration: underline;
 }
 
 .title-link {
