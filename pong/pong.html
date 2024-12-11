@@ -15,7 +15,7 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #333; color: #fff; font-family: 'Blippo', sans-serif; flex-direction: column; }
-        canvas { width: 900px; height: 675px; border: 2px solid #fff; background: #222; border-radius: 15px; margin-top: 10px; cursor: auto; }
+        canvas { width: 1200px; height: 900px; border: 2px solid #fff; background: #222; border-radius: 15px; margin-top: 10px; cursor: auto; }
         #scoreMessage {
             position: absolute;
             top: 50%;
@@ -68,11 +68,6 @@
         const ctx = canvas.getContext('2d');
         const scoreMessage = document.getElementById('scoreMessage');
         const startScreen = document.getElementById('startScreen');
-
-        // Background music setup
-        const backgroundMusic = new Audio('https://cdn.freesound.org/previews/405/405220_2784786-lq.mp3');
-        backgroundMusic.loop = true;
-        backgroundMusic.volume = 0.1; // Default volume, adjustable in code
 
         const paddleWidth = 20;
         const paddleHeight = 160;
@@ -156,31 +151,36 @@
             ball.x += ball.dx;
             ball.y += ball.dy;
 
+            // Ball bouncing off the top or bottom walls
             if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
                 ball.dy *= -1;
             }
 
+            // Collision with player paddle
             if (ball.x - ball.radius < playerPaddle.x + playerPaddle.width &&
                 ball.y > playerPaddle.y &&
                 ball.y < playerPaddle.y + playerPaddle.height) {
                 ball.dx = Math.max(-maxSpeed, Math.min(maxSpeed, ball.dx * -speedIncrement));
-                ball.dy += (Math.random() * 0.8 - 0.4);
+                ball.dy += (Math.random() * 0.8 - 0.4); // Increased randomness to dy to prevent predictable back-and-forth
                 paddleHitSound.play();
             }
 
+            // Collision with AI paddle
             if (ball.x + ball.radius > aiPaddle.x &&
                 ball.y > aiPaddle.y &&
                 ball.y < aiPaddle.y + aiPaddle.height) {
                 ball.dx = Math.max(-maxSpeed, Math.min(maxSpeed, ball.dx * -speedIncrement));
-                ball.dy += (Math.random() * 0.8 - 0.4);
+                ball.dy += (Math.random() * 0.8 - 0.4); // Increased randomness to dy to prevent predictable back-and-forth
                 paddleHitSound.play();
             }
 
+            // Check if ball passes the player paddle
             if (ball.x - ball.radius < 0) {
                 aiScore++;
                 aiScoreSound.play();
                 showScoreMessage("AI Scored!");
             }
+            // Check if ball passes the AI paddle
             if (ball.x + ball.radius > canvas.width) {
                 playerScore++;
                 playerScoreSound.play();
@@ -225,7 +225,6 @@
                 isGameRunning = true;
                 isGamePaused = false;
                 startScreen.style.display = 'none';
-                backgroundMusic.play();
                 resetBall();
                 canvas.style.cursor = 'none';
             }
@@ -249,10 +248,8 @@
                 if (isGamePaused) {
                     startScreen.style.display = 'flex';
                     startScreen.querySelector('#startText').textContent = 'Resume Game';
-                    backgroundMusic.pause();
                 } else {
                     startScreen.style.display = 'none';
-                    backgroundMusic.play();
                 }
             }
         }

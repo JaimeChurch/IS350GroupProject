@@ -55,11 +55,11 @@
 </head>
 <body>
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="900" height="675"></canvas>
+        <canvas id="gameCanvas" width="1200" height="900"></canvas>
         <div id="overlay" onclick="startGame()">
             <div style="text-align: center; padding-bottom: 40px;">
                 <p style="font-family: 'MyGirlIsRetro', sans-serif; font-size: 48px; color: #E27B34; font-weight: bold; text-shadow: 2px 2px #000; padding-top: 10px; letter-spacing: 3px;">BREAKOUT</p>
-                <p style="font-family: 'MyGirlIsRetro', sans-serif; font-size: 20px; color: #CCCCCC; padding-top: 65px; letter-spacing: 2px;"> Controls:  ← Left | Right →</p>
+                <p style="font-family: 'MyGirlIsRetro', sans-serif; font-size: 20px; color: #CCCCCC; padding-top: 65px; letter-spacing: 2px;"> Controls:  ← Left / Right →</p>
                 <p style="font-family: 'MyGirlIsRetro', sans-serif; font-size: 20px; color: #CCCCCC; padding-top: 15px; letter-spacing: 1.5px;"> Click to Start</p>
             </div>
         </div>
@@ -73,44 +73,32 @@
         const gameOverText = document.getElementById("gameOverText");
         const gameContainer = document.getElementById("gameContainer");
 
-        const paddleHitSound = new Audio('https://cdn.freesound.org/previews/539/539662_8272284-lq.mp3');
-        const backgroundMusic = new Audio('backgroundmusic.mp3');
-
-        backgroundMusic.volume = 0.1;
-        backgroundMusic.loop = true;
-
-        function setBackgroundMusicPlayback(speed, volume) {
-            backgroundMusic.playbackRate = speed;
-            backgroundMusic.volume = volume;
-        }
-
-        paddleHitSound.playbackRate = 1.75;
-        paddleHitSound.volume = 0.75;
-
-        let ballRadius = 12;
+        let ballRadius = 15;
         let x = canvas.width / 2;
-        let y = canvas.height - 80;
+        let y = canvas.height - 100;
         let dx = 1.1;
         let dy = -1.1;
 
-        const paddleHeight = 15;
-        const paddleWidth = 125;
+        const paddleHeight = 18;
+        const paddleWidth = 165;
         let paddleX = (canvas.width - paddleWidth) / 2;
-        const paddleY = canvas.height - paddleHeight - 30;
+        const paddleY = canvas.height - paddleHeight - 40;
         let rightPressed = false;
         let leftPressed = false;
 
         const brickRowCount = 6;
         const brickColumnCount = 9;
-        const brickWidth = 85;
-        const brickHeight = 25;
-        const brickPadding = 10;
-        const brickOffsetTop = 50;
-        const brickOffsetLeft = 25;
+        const brickWidth = 105;
+        const brickHeight = 30;
+        const brickPadding = 15;
+        const brickOffsetTop = 60;
+        const brickOffsetLeft = 55;
         let bricks = [];
         let score = 0;
         let lives = 3;
-        let remainingBricks = brickRowCount * brickColumnCount;
+        let gameWon = false;
+        let remainingBricks = brickRowCount * brickColumnCount + brickColumnCount;
+
         let isGameRunning = false;
         let selectedColors = [];
 
@@ -122,11 +110,13 @@
                     bricks[c][r] = { x: 0, y: 0, status: 1 };
                 }
             }
+            remainingBricks = brickRowCount * brickColumnCount;
         }
 
         function pickRandomColors() {
             const colors = ["#E27B34", "#4CAF50", "#FF5722", "#3F51B5", "#FFC107", "#CCCCCC", "#0095dd", "#8B0000", "#00BCD4"];
             selectedColors = [];
+            
             while (selectedColors.length < 3) {
                 const randomColor = colors[Math.floor(Math.random() * colors.length)];
                 if (!selectedColors.includes(randomColor)) {
@@ -137,19 +127,21 @@
 
         function resetGameState() {
             x = canvas.width / 2;
-            y = canvas.height - 80;
+            y = canvas.height - 100;
             dx = 1.1;
             dy = -1.1;
             paddleX = (canvas.width - paddleWidth) / 2;
             score = 0;
             lives = 3;
+            gameWon = false;
             initBricks();
-            backgroundMusic.currentTime = 0;
         }
 
         document.addEventListener("keydown", keyDownHandler);
         document.addEventListener("keyup", keyUpHandler);
         document.addEventListener("mousemove", mouseMoveHandler);
+        canvas.addEventListener("mouseenter", hideMouse);
+        canvas.addEventListener("mouseleave", showMouse);
 
         function keyDownHandler(e) {
             if (e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
@@ -166,6 +158,7 @@
             if (relativeX > 0 && relativeX < canvas.width) {
                 paddleX = relativeX - paddleWidth / 2;
             }
+            showMouse();
         }
 
         function collisionDetection() {
@@ -178,16 +171,18 @@
                             b.status = 0;
                             score++;
                             remainingBricks--;
-                            const brickSound = new Audio('https://cdn.freesound.org/previews/539/539662_8272284-lq.mp3');
-                            brickSound.volume = 0.75;
-                            brickSound.playbackRate = 1.75;
-                            brickSound.play();
                             if (remainingBricks === 0) {
-                                isGameRunning = false;
-                                backgroundMusic.pause();
-                                gameOverText.innerText = 'You Win';
+                                gameWon = true;
+                                gameOverText.innerText = 'You Win!';
+                                gameOverText.style.color = '#E27B34';
+                                gameOverText.style.fontFamily = 'MyGirlIsRetro', sans-serif;
+                                gameOverText.style.fontSize = '42px';
+                                gameOverText.style.fontWeight = 'bold';
+                                gameOverText.style.textShadow = '2px 2px #000';
+                                gameOverText.style.top = 'calc(50% - 50px)';
                                 gameOverText.style.display = 'block';
                                 overlay.style.display = 'flex';
+                                isGameRunning = false;
                             }
                         }
                     }
@@ -212,6 +207,16 @@
         }
 
         function drawBricks() {
+            let rowColors = [];
+
+            if (!rowColors.length) {
+                for (let r = 0; r < brickRowCount; r += 2) {
+                    const colorIndex = r % selectedColors.length;
+                    rowColors[r] = selectedColors[colorIndex];
+                    rowColors[r + 1] = selectedColors[colorIndex];
+                }
+            }
+
             for (let c = 0; c < brickColumnCount; c++) {
                 for (let r = 0; r < brickRowCount; r++) {
                     if (bricks[c][r].status === 1) {
@@ -221,7 +226,10 @@
                         bricks[c][r].y = brickY;
                         ctx.beginPath();
                         ctx.rect(brickX, brickY, brickWidth, brickHeight);
-                        ctx.fillStyle = selectedColors[r % selectedColors.length];
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = '#8B0000';
+                        ctx.stroke();
+                        ctx.fillStyle = rowColors[r];
                         ctx.fill();
                         ctx.closePath();
                     }
@@ -243,7 +251,7 @@
 
         function resetAfterLifeLoss() {
             x = canvas.width / 2;
-            y = canvas.height - 80;
+            y = canvas.height - 100;
             dx = 1.1;
             dy = -1.1;
         }
@@ -254,8 +262,16 @@
             overlay.style.display = 'none';
             gameOverText.style.display = 'none';
             isGameRunning = true;
-            backgroundMusic.play();
+            hideMouse();
             draw();
+        }
+
+        function hideMouse() {
+            canvas.style.cursor = 'none';
+        }
+
+        function showMouse() {
+            canvas.style.cursor = 'default';
         }
 
         function draw() {
@@ -268,42 +284,43 @@
             drawScore();
             drawLives();
 
+            if (gameWon) return;
+
             collisionDetection();
 
             x += dx;
             y += dy;
 
-            if (dy > 0 && y + dy > paddleY - ballRadius && x > paddleX && x < paddleX + paddleWidth) {
+            if (dy > 0 && y + dy > paddleY - ballRadius && y < paddleY && x > paddleX && x < paddleX + paddleWidth) {
                 dy = -Math.abs(dy);
-                paddleHitSound.play();
+                y = paddleY - ballRadius;
             }
 
-            if (y + dy > canvas.height) {
+            if (y > canvas.height) {
                 lives--;
-                if (lives === 0) {
-                    isGameRunning = false;
-                    backgroundMusic.pause();
-                    gameOverText.innerText = 'Game Over';
+                if (lives <= 0) {
+                    lives = 0; // Ensure lives don't go below 0
                     gameOverText.style.display = 'block';
                     overlay.style.display = 'flex';
+                    gameOverText.innerText = 'Game Over';
+                    gameOverText.style.color = '#E27B34';
+                    gameOverText.style.fontFamily = 'MyGirlIsRetro', sans-serif;
+                    gameOverText.style.fontSize = '42px';
+                    gameOverText.style.fontWeight = 'bold';
+                    gameOverText.style.textShadow = '2px 2px #000';
+                    gameOverText.style.top = 'calc(50% - 50px)';
+                    isGameRunning = false;
+                    showMouse();
                 } else {
                     resetAfterLifeLoss();
                 }
             }
 
-            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-                dx = -dx;
-            }
+            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
+            if (y + dy < ballRadius) dy = -dy;
 
-            if (y + dy < ballRadius) {
-                dy = -dy;
-            }
-
-            if (rightPressed && paddleX < canvas.width - paddleWidth) {
-                paddleX += 7;
-            } else if (leftPressed && paddleX > 0) {
-                paddleX -= 7;
-            }
+            if (rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 3;
+            else if (leftPressed && paddleX > 0) paddleX -= 3;
 
             requestAnimationFrame(draw);
         }
