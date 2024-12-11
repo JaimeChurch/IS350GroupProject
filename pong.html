@@ -4,53 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pong Game with AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tsukimi+Rounded:wght@700&display=swap" rel="stylesheet">
     <style>
+        @font-face {
+            font-family: 'Blippo';
+            src: url('pong/blippo/BlippoBlackBT.ttf') format('truetype');
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #333; color: #fff; font-family: Arial, sans-serif; flex-direction: column; }
-        canvas { border: 2px solid #fff; background: #222; margin-top: 10px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #333; color: #fff; font-family: 'Blippo', sans-serif; flex-direction: column; }
+        canvas { width: 880px; height: 660px; border: 2px solid #fff; background: #222; border-radius: 15px; margin-top: 10px; cursor: auto; }
         #scoreMessage {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 24px;
+            font-size: 54px;
             color: white;
             display: none;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        #pongLogo {
+            font-size: 68px;
+            font-family: 'Blippo', sans-serif;
+            color: white;
+            margin-bottom: 20px;
+        }
+        #startText {
+            font-size: 24px;
+            color: white;
+        }
+        #controlsText {
+            font-size: 18px;
+            color: white;
+            margin-top: 25px;
         }
     </style>
 </head>
 <body>
-    <button id="startButton">Start Game</button>
+    <div id="startScreen">
+        <div id="pongLogo">PONG</div>
+        <div id="startText">Click to Start</div>
+        <div id="controlsText">▲ Up | ▼ Down | ▄▄▄▄ Pause</div>
+    </div>
     <div id="scoreMessage">Player Scored!</div>
-    <canvas id="pongCanvas" width="600" height="400"></canvas>
+    <canvas id="pongCanvas" width="1200" height="900"></canvas>
     <script>
         const canvas = document.getElementById('pongCanvas');
         const ctx = canvas.getContext('2d');
-        const startButton = document.getElementById('startButton');
         const scoreMessage = document.getElementById('scoreMessage');
+        const startScreen = document.getElementById('startScreen');
 
-        const paddleWidth = 10;
-        const paddleHeight = 80;
+        const paddleWidth = 20;
+        const paddleHeight = 160;
 
-        // Initial and maximum ball speeds at 25% of previous values
-        const initialSpeed = 0.75;
-        const speedIncrement = 1.02;
-        const maxSpeed = 1.25;
+        const initialSpeed = 0.95;
+        const speedIncrement = 1.2;
+        const maxSpeed = 12;
 
-        // Paddle speeds
-        const playerPaddleSpeed = 0.75;
-        const aiPaddleSpeed = 0.625;
+        const playerPaddleSpeed = 1.6;
+        const aiPaddleSpeed = 1.5;
 
-        // Sound effects
         const paddleHitSound = new Audio('https://cdn.freesound.org/previews/758/758955_12604274-lq.mp3');
         const aiScoreSound = new Audio('https://cdn.freesound.org/previews/333/333785_5858296-lq.mp3');
         const playerScoreSound = new Audio('https://cdn.freesound.org/previews/609/609335_2770604-lq.mp3');
-        aiScoreSound.volume = 0.1; // Set volume to 10% for AI score sound
+        aiScoreSound.volume = 0.1;
 
         const playerPaddle = { x: 10, y: canvas.height / 2 - paddleHeight / 2, width: paddleWidth, height: paddleHeight, dy: playerPaddleSpeed };
         const aiPaddle = { x: canvas.width - paddleWidth - 10, y: canvas.height / 2 - paddleHeight / 2, width: paddleWidth, height: paddleHeight, dy: aiPaddleSpeed };
-        const ball = { x: canvas.width / 2, y: canvas.height / 2, dx: initialSpeed, dy: initialSpeed, radius: 8 };
+        const ball = { x: canvas.width / 2, y: canvas.height / 2, dx: initialSpeed, dy: initialSpeed, radius: 16 };
 
         let playerScore = 0;
         let aiScore = 0;
@@ -71,9 +107,9 @@
         }
 
         function drawScore() {
-            ctx.font = '20px Arial';
-            ctx.fillText('Player: ' + playerScore, 20, 30);
-            ctx.fillText('AI: ' + aiScore, canvas.width - 80, 30);
+            ctx.font = '40px Blippo';
+            ctx.fillText('Player: ' + playerScore, 40, 60);
+            ctx.fillText('AI: ' + aiScore, canvas.width - 160, 60);
         }
 
         function resetBall() {
@@ -108,43 +144,46 @@
                 scoreMessage.style.display = 'none';
                 isGamePaused = false;
                 resetBall();
-            }, 1500); // Show the message for 1.5 seconds before resuming
+            }, 1500);
         }
 
         function moveBall() {
             ball.x += ball.dx;
             ball.y += ball.dy;
 
-            // Ball collision with top and bottom walls
+            // Ball bouncing off the top or bottom walls
             if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
                 ball.dy *= -1;
             }
 
-            // Ball collision with player paddle
+            // Collision with player paddle
             if (ball.x - ball.radius < playerPaddle.x + playerPaddle.width &&
                 ball.y > playerPaddle.y &&
                 ball.y < playerPaddle.y + playerPaddle.height) {
                 ball.dx = Math.max(-maxSpeed, Math.min(maxSpeed, ball.dx * -speedIncrement));
-                paddleHitSound.play(); // Play sound on player paddle hit
+                ball.dy += (Math.random() * 0.8 - 0.4); // Increased randomness to dy to prevent predictable back-and-forth
+                paddleHitSound.play();
             }
 
-            // Ball collision with AI paddle
+            // Collision with AI paddle
             if (ball.x + ball.radius > aiPaddle.x &&
                 ball.y > aiPaddle.y &&
                 ball.y < aiPaddle.y + aiPaddle.height) {
                 ball.dx = Math.max(-maxSpeed, Math.min(maxSpeed, ball.dx * -speedIncrement));
-                paddleHitSound.play(); // Play sound on AI paddle hit
+                ball.dy += (Math.random() * 0.8 - 0.4); // Increased randomness to dy to prevent predictable back-and-forth
+                paddleHitSound.play();
             }
 
-            // Ball goes out of bounds
-            if (ball.x - ball.radius < 0) { // Player misses, AI scores
+            // Check if ball passes the player paddle
+            if (ball.x - ball.radius < 0) {
                 aiScore++;
-                aiScoreSound.play(); // Play sound for AI scoring
+                aiScoreSound.play();
                 showScoreMessage("AI Scored!");
             }
-            if (ball.x + ball.radius > canvas.width) { // AI misses, Player scores
+            // Check if ball passes the AI paddle
+            if (ball.x + ball.radius > canvas.width) {
                 playerScore++;
-                playerScoreSound.play(); // Play sound for Player scoring
+                playerScoreSound.play();
                 showScoreMessage("Player Scored!");
             }
         }
@@ -173,7 +212,7 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowUp') upPressed = true;
             if (e.key === 'ArrowDown') downPressed = true;
-            if (e.key === 'p' || e.key === 'P') togglePause();
+            if (e.key === ' ') togglePause();
         });
 
         document.addEventListener('keyup', (e) => {
@@ -181,21 +220,36 @@
             if (e.key === 'ArrowDown') downPressed = false;
         });
 
-        startButton.addEventListener('click', () => {
-            isGameRunning = true;
-            isGamePaused = false;
-            startButton.style.display = 'none'; // Hide the start button
-            resetBall(); // Reset ball to center on start
+        startScreen.addEventListener('click', () => {
+            if (!isGameRunning) {
+                isGameRunning = true;
+                isGamePaused = false;
+                startScreen.style.display = 'none';
+                resetBall();
+                canvas.style.cursor = 'none';
+            }
         });
+
+        document.addEventListener('mousemove', () => {
+            if (isGameRunning) {
+                canvas.style.cursor = 'auto';
+                clearTimeout(hideCursorTimeout);
+                hideCursorTimeout = setTimeout(() => {
+                    canvas.style.cursor = 'none';
+                }, 2000);
+            }
+        });
+
+        let hideCursorTimeout;
 
         function togglePause() {
             if (isGameRunning) {
                 isGamePaused = !isGamePaused;
                 if (isGamePaused) {
-                    startButton.style.display = 'block'; // Show button to indicate pause
-                    startButton.textContent = 'Resume Game';
+                    startScreen.style.display = 'flex';
+                    startScreen.querySelector('#startText').textContent = 'Resume Game';
                 } else {
-                    startButton.style.display = 'none';
+                    startScreen.style.display = 'none';
                 }
             }
         }

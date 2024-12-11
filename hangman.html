@@ -1,148 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+    <!-- Meta and Title -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Western Hangman - The Ultimate Edition</title>
+    <title>Western Hangman - Enhanced Edition</title>
+    <!-- Fonts and Styles -->
     <link href="https://fonts.googleapis.com/css2?family=Fredericka+the+Great&display=swap" rel="stylesheet">
     <style>
         /* General Styling */
+        :root {
+            --primary-font: 'Fredericka the Great', cursive;
+            --primary-color: #8b4513;
+            --secondary-color: #b22222;
+            --background-gradient: linear-gradient(to bottom, #87CEEB, #ffcc70 30%, #ff914d 80%, #a0522d);
+        }
+
+        html,
         body {
-            font-family: 'Fredericka the Great', cursive;
-            background: linear-gradient(to bottom, #87CEEB, #ffcc70 30%, #ff914d 80%, #a0522d); /* Sky to sunset to ground */
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: var(--primary-font);
+            background: var(--background-gradient);
             color: #333;
             text-align: center;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
+            position: relative;
             overflow: hidden;
+        }
+
+        /* Rising Sun */
+        .sun {
+            position: absolute;
+            bottom: -150px;
+            right: 50px;
+            /* Moved in from the right edge */
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle at center, #FFD700, #FFA500);
+            border-radius: 50%;
+            animation: rise 10s forwards;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
+            z-index: -1;
+        }
+
+        @keyframes rise {
+            0% {
+                bottom: -150px;
+                right: 50px;
+            }
+
+            100% {
+                bottom: calc(100% - 150px);
+                right: 50px;
+            }
+        }
+
+        /* Clouds */
+        .cloud {
+            position: absolute;
+            top: 50px;
+            background: #fff;
+            border-radius: 50px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            animation: float 120s linear infinite;
+        }
+
+        .cloud::before,
+        .cloud::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+            width: 100px;
+            height: 60px;
+            border-radius: 50%;
+        }
+
+        .cloud::before {
+            top: -30px;
+            left: 30px;
+        }
+
+        .cloud::after {
+            top: -20px;
+            left: -30px;
+        }
+
+        @keyframes float {
+            from {
+                transform: translateX(-10px);
+            }
+
+            to {
+                transform: translateX(100vw);
+            }
+        }
+
+        /* Cloud Positions */
+        .cloud1 {
+            width: 120px;
+            height: 70px;
+            left: -150px;
+            animation-delay: 0s;
+        }
+
+        .cloud2 {
+            width: 180px;
+            height: 100px;
+            left: -250px;
+            top: 100px;
+            animation-delay: 20s;
+        }
+
+        .cloud3 {
+            width: 150px;
+            height: 80px;
+            left: -200px;
+            top: 150px;
+            animation-delay: 40s;
         }
 
         /* Title Styling */
         h1 {
-            color: #8b4513;
-            font-size: 4em;
+            color: var(--primary-color);
+            font-size: 3em;
             margin: 20px;
             text-shadow: 4px 4px #000;
         }
 
         /* Hangman Canvas */
         #hangmanCanvas {
-            width: 400px;
-            height: 500px;
+            width: 100%;
+            max-width: 350px;
+            height: auto;
             background-color: #f8e1b1;
-            margin-top: 30px;
+            padding-top: 0px;
+            margin-top: 0px;
             border-radius: 10px;
-            box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.5);
-            z-index: 10;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+            display: block;
         }
 
         /* Word Display */
         #wordDisplay {
-            font-size: 40px;
-            letter-spacing: 14px;
+            font-size: 2em;
+            letter-spacing: 0.1em;
             font-weight: bold;
-            color: #8b4513;
-            margin: 20px;
+            color: var(--primary-color);
+            margin-top: 0px;
+            margin-bottom: 0px;
+            padding-top: 0px;
+            padding-bottom: 0px;
             text-shadow: 3px 3px #e0c097;
         }
 
         /* Message Styling */
         #message {
-            color: #b22222;
-            font-size: 24px;
+            color: var(--secondary-color);
+            font-size: 1.5em;
             font-weight: bold;
             margin: 20px;
         }
 
         /* Input and Button Styling */
-        input, button {
-            padding: 15px;
-            font-size: 22px;
+        input,
+        button {
+            padding: 10px;
+            font-size: 1em;
             margin: 10px;
-            border: 2px solid #8b4513;
+            border: 2px solid var(--primary-color);
             background-color: #e6ccb2;
             color: #333;
             border-radius: 8px;
-            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.2);
         }
 
         /* Wrong Letters Display */
-        #wrongLetters, #wrongGuesses {
-            font-size: 22px;
-            color: #b22222;
+        #wrongLetters {
+            font-size: 1.2em;
+            color: var(--secondary-color);
             font-weight: bold;
+            padding-top: 0px;
+            margin-top: 0px;
+        }
+
+        #wrongGuesses {
+            display: none;
         }
 
         /* Reset Button */
         #resetButton {
             display: none;
-            padding: 15px;
-            font-size: 20px;
-            background-color: #b22222;
+            margin-top: 0px;
+            font-size: 1em;
+            background-color: var(--secondary-color);
             color: white;
             border: none;
             cursor: pointer;
             border-radius: 12px;
-            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.5);
             transition: background-color 0.3s;
         }
-        #resetButton:hover {
+
+        #homeButton {
+            display: none;
+        }
+
+        #resetButton:hover,
+        #homeButton:hover {
             background-color: #8b0000;
         }
 
         /* Western Town Layout */
         .game-container {
-            position: relative;
-            width: 100%;
-            max-width: 1400px;
             display: flex;
             justify-content: space-around;
             align-items: flex-end;
+            flex-wrap: wrap;
             margin-top: 30px;
-            gap: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         /* Building Styling */
         .building {
-            width: 200px;
-            height: 400px;
+            width: 100%;
+            max-width: 200px;
+            height: auto;
             background-color: #8b5a2b;
             border: 3px solid #3e2f23;
-            position: relative;
+            margin: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            box-shadow: 10px 10px 15px rgba(0, 0, 0, 0.7);
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.7);
             color: #f4e4c3;
             text-align: center;
-            font-size: 1.7em;
+            font-size: 1.2em;
             background-image: linear-gradient(#8b5a2b 20px, transparent 20px);
-            background-size: 100% 60px; /* Enhanced paneling effect */
+            background-size: 100% 60px;
+            position: relative;
         }
 
-        /* Saloon Building */
-        .saloon {
+        /* Additional Building Variants */
+        .bank {
             background-color: #a0522d;
         }
 
-        /* Hotel Building with A-Frame Roof */
-        .hotel {
-            background-color: #8b5a2b;
-            padding-top: 30px;
+        .general-store {
+            background-color: #cd853f;
         }
 
         /* Roof Styling for A-Frame */
         .roof {
-            width: 200px;
+            width: 100%;
             height: 0;
-            border-left: 100px solid transparent;
-            border-right: 100px solid transparent;
+            border-left: 50% solid transparent;
+            border-right: 50% solid transparent;
             border-bottom: 50px solid #3e2f23;
             position: absolute;
             top: -50px;
+            left: 0;
+            padding-top: 20px;
         }
 
         .building .sign {
@@ -151,6 +275,8 @@
             color: #f4e4c3;
             padding: 12px;
             border-bottom: 3px solid #2d1e12;
+            font-size: 1.4em;
+            text-shadow: 2px 2px #000;
         }
 
         .window {
@@ -159,6 +285,7 @@
             background-color: #f4e4c3;
             border: 3px solid #3e2f23;
             margin: 15px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
         }
 
         .door {
@@ -167,69 +294,72 @@
             background-color: #3e2f23;
             border: 3px solid #2d1e12;
             margin-top: auto;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
         }
 
-        /* Enhanced Ground Styling */
-        .ground {
+        /* Cactus Styling */
+        .cactus {
             position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 50vh;
-            background: linear-gradient(to top, #c19a6b, #d2b48c 60%);
-            z-index: -2;
-        }
-
-        /* Cactus and Bushes Styling */
-        .cactus, .bush {
-            position: absolute;
-            bottom: 0px;
-            width: 100px;
-            height: 200px;
+            bottom: 5%;
+            width: 30px;
+            height: 150px;
             background: #228B22;
             border-radius: 20px;
-            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
-            scale: .5;
+            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.5);
+            z-index: 1;
         }
 
-        .cactus::before, .cactus::after, .bush::before, .bush::after {
+        .cactus::before,
+        .cactus::after {
             content: "";
             position: absolute;
-            width: 50px;
-            height: 120px;
+            width: 28px;
+            height: 60px;
             background: #228B22;
             border-radius: 20px;
         }
 
         .cactus::before {
-            left: -40px;
-            top: 20px;
+            left: -30px;
+            top: 10px;
         }
 
         .cactus::after {
-            right: -40px;
-            top: 40px;
-        }
-
-        .bush {
-            height: 120px;
-            width: 150px;
-            bottom: 0px;
-            background: #2E8B57;
-            border-radius: 35%;
-        }
-
-        .bush::before {
-            left: -30px;
-            top: 10px;
-            width: 80px;
-            height: 100px;
-        }
-
-        .bush::after {
             right: -30px;
-            top: 20px;
+            top: 30px;
+        }
+
+        /* Rock Styling */
+        .rock {
+            position: absolute;
+            bottom: 5%;
             width: 80px;
-            height: 100px;
+            height: 40px;
+            background: #8B4513;
+            border-radius: 40px 40px 10px 10px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Positioning Cacti and Rocks */
+        .cactus.cactus1 {
+            left: 35px;
+            bottom: 65px;
+        }
+
+        .cactus.cactus2 {
+            right: 65px;
+            bottom: 20px;
+        }
+
+        .rock.rock1 {
+            left: 160px;
+            bottom: 10%;
+        }
+
+        .rock.rock2 {
+            right: 20%;
+            bottom: 6%;
         }
 
         /* Start Page Styling */
@@ -238,66 +368,220 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            position: absolute;
+            min-height: calc(100vh - 40px);
+            padding: 20px;
+            background: transparent;
+            position: relative;
+        }
+
+        .town-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            flex-wrap: wrap;
             width: 100%;
-            top: 0;
-            left: 0;
-            background: linear-gradient(to bottom, #87CEEB, #ff914d);
-            z-index: 999; /* Make sure the start page is on top */
+            max-width: 900px;
+            /* margin: 20px auto; */
         }
 
         .big-title {
-            font-size: 6em;
-            color: #8b4513;
+            font-size: 4em;
+            color: var(--primary-color);
             text-shadow: 5px 5px #000;
             letter-spacing: 0.1em;
-            animation: shake 1.5s infinite;
+            animation: shake 6s infinite;
+            margin-bottom: 20px;
         }
 
         @keyframes shake {
-            0%, 100% { transform: rotate(0deg); }
-            10% { transform: rotate(-3deg); }
-            20% { transform: rotate(3deg); }
-            30% { transform: rotate(-3deg); }
-            40% { transform: rotate(3deg); }
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            10% {
+                transform: rotate(-1deg);
+            }
+
+            20% {
+                transform: rotate(1deg);
+            }
+
+            30% {
+                transform: rotate(-1deg);
+            }
+
+            40% {
+                transform: rotate(1deg);
+            }
         }
 
         #instructions {
-            font-size: 1.7em;
+            font-size: 1.4em;
             max-width: 800px;
             color: #333;
             margin: 20px;
-            background-color: #fff3e0;
+            background-color: rgba(255, 243, 224, 0.9);
             padding: 30px;
             border-radius: 20px;
-            border: 2px solid #8b4513;
-            box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--primary-color);
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+            text-align: left;
         }
 
         .start-button {
-            padding: 25px 50px;
-            font-size: 2em;
+            padding: 15px 30px;
+            font-size: 1.5em;
             background-color: #a52a2a;
             color: #fff;
             border: none;
             border-radius: 20px;
             cursor: pointer;
-            box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.4);
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.4);
             transition: background-color 0.3s, transform 0.2s;
+            margin-top: 20px;
         }
+
         .start-button:hover {
             background-color: #8b0000;
             transform: scale(1.05);
         }
+
+        /* Responsive Styling */
+        @media screen and (max-width: 768px) {
+            h1 {
+                font-size: 2.2em;
+            }
+
+            #wordDisplay {
+                font-size: 1.6em;
+            }
+
+            input,
+            button {
+                font-size: 0.9em;
+                padding: 8px;
+            }
+
+            #message,
+            #wrongLetters,
+            #wrongGuesses {
+                font-size: 1em;
+            }
+
+            /* Hide buildings and decorations on smaller screens */
+            .building,
+            .cactus,
+            .rock,
+            .cloud {
+                display: none;
+            }
+
+            .game-container {
+                justify-content: center;
+            }
+
+            .town-container {
+                display: none;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            #wordDisplay {
+                font-size: 1.4em;
+            }
+
+            input,
+            button {
+                font-size: 0.8em;
+                padding: 6px;
+            }
+
+            #message,
+            #wrongLetters,
+            #wrongGuesses {
+                font-size: 0.9em;
+            }
+
+            /* Hide buildings and decorations on even smaller screens */
+            .building,
+            .cactus,
+            .rock,
+            .cloud {
+                display: none;
+            }
+
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .town-container {
+                display: none;
+            }
+        }
     </style>
 </head>
+
 <body>
+    <!-- Rising Sun -->
+    <div class="sun"></div>
+
+    <!-- Clouds -->
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+    <div class="cloud cloud3"></div>
+
     <!-- Start Page -->
     <div id="startPage">
         <div class="big-title">Western Hangman</div>
+
+        <!-- Town on Start Screen -->
+        <div class="town-container">
+            <!-- Saloon Building -->
+            <!-- <div class="building saloon">
+                <div class="sign">Saloon</div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="door"></div>
+            </div> -->
+
+            <!-- Bank Building -->
+            <!-- <div class="building bank">
+                <div class="roof"></div>
+                <div class="sign">Bank</div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="door"></div>
+            </div> -->
+
+            <!-- General Store Building -->
+            <!-- <div class="building general-store">
+                <div class="sign">General Store</div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="door"></div>
+            </div> -->
+
+            <!-- Hotel Building -->
+            <!-- <div class="building hotel">
+                <div class="roof"></div>
+                <div class="sign">Hotel</div>
+                <div class="window"></div>
+                <div class="window"></div>
+                <div class="door"></div>
+            </div> -->
+        </div>
+
         <div id="instructions">
-            <p>Welcome to Western Hangman! In this classic game, you’ll try to guess the hidden word by entering one letter at a time. Be careful, though! For each incorrect guess, a part of the hangman will appear. You have 6 tries to guess the word correctly before the game ends.</p>
+            <p>Welcome to Western Hangman! In this classic game, you’ll try to guess the hidden word by entering one
+                letter at a time. Be careful, though! For each incorrect guess, a part of the hangman will appear. You
+                have 6 tries to guess the word correctly before the game ends.</p>
             <p>To play, enter a letter and click 'Guess.' Good luck, partner!</p>
         </div>
         <button class="start-button" onclick="startGame()">Start Game</button>
@@ -305,16 +589,10 @@
 
     <!-- Game Page -->
     <div id="gamePage" style="display: none;">
-        <div class="sunset"></div>
-        <div class="ground"></div>
-        <div class="cactus" style="left: 2%;"></div>
-        <div class="cactus" style="right: 2%;"></div>
-        <div class="bush" style="left: 10%;"></div>
-        <div class="bush" style="right: 10%;"></div>
-        <h1>Western Hangman</h1>
+        <!-- <h1>Western Hangman</h1> -->
         <div class="game-container">
             <!-- Saloon Building -->
-            <div class="building saloon left">
+            <div class="building saloon">
                 <div class="sign">Saloon</div>
                 <div class="window"></div>
                 <div class="window"></div>
@@ -325,7 +603,7 @@
             <canvas id="hangmanCanvas"></canvas>
 
             <!-- Hotel Building with A-Frame Roof -->
-            <div class="building hotel right">
+            <div class="building hotel">
                 <div class="roof"></div>
                 <div class="sign">Hotel</div>
                 <div class="window"></div>
@@ -334,23 +612,54 @@
             </div>
         </div>
 
+        <!-- Cacti and Rocks -->
+        <div class="cactus cactus1"></div>
+        <div class="cactus cactus2"></div>
+        <div class="rock rock1"></div>
+        <div class="rock rock2"></div>
+
         <p id="wordDisplay">_ _ _ _</p>
-        <p id="message"></p>
         <input type="text" id="guessInput" maxlength="1" placeholder="Enter a letter">
         <button onclick="guessLetter()">Guess</button>
-        <p id="wrongGuesses">Wrong Guesses: <span>0</span></p>
+        <p id="wrongGuesses" style="display: none;">Wrong Guesses: <span>0</span></p>
         <p id="wrongLetters">Wrong Letters: </p>
         <button id="resetButton" onclick="resetGame()">Reset Game</button>
+        <p id="message"></p>
+        <!-- Home Button -->
+        <button id="homeButton" onclick="goHome()">Home</button>
     </div>
 
+    <!-- Background Music Audio Element -->
+    <audio id="backgroundMusic" src="sound/background-music.mp3" preload="auto" loop muted></audio>
+
     <script>
+        let chosenWord, displayWord, wrongGuesses, maxGuesses, guessedLetters;
+
+        // Sound effects with updated paths to the 'sound' folder
+        let correctSound = new Audio('sound/correct-sound.wav');
+        let incorrectSound = new Audio('sound/incorrect-sound.wav');
+        let winSound = new Audio('sound/win-sound.wav');
+        let loseSound = new Audio('sound/lose-sound.wav');
+
+        correctSound.preload = 'auto';
+        incorrectSound.preload = 'auto';
+        winSound.preload = 'auto';
+        loseSound.preload = 'auto';
+
         function startGame() {
             document.getElementById("startPage").style.display = "none";
             document.getElementById("gamePage").style.display = "block";
             initializeGame();
-        }
 
-        let chosenWord, displayWord, wrongGuesses, maxGuesses, guessedLetters;
+            let backgroundMusic = document.getElementById("backgroundMusic");
+            backgroundMusic.muted = false; // Unmute after user interaction
+            backgroundMusic.volume = 1.0; // Ensure volume is set
+            backgroundMusic.play().then(() => {
+                // Audio playback started successfully
+            }).catch((error) => {
+                console.error("Background music playback failed:", error);
+            });
+        }
 
         async function fetchRandomWord() {
             try {
@@ -374,6 +683,7 @@
             document.getElementById("wrongLetters").innerText = "Wrong Letters: ";
             document.getElementById("message").innerText = "";
             document.getElementById("resetButton").style.display = "none";
+            document.getElementById("homeButton").style.display = "none";
             document.getElementById("guessInput").disabled = false;
             clearCanvas();
         }
@@ -383,7 +693,7 @@
             const guess = guessInput.value.toLowerCase();
             guessInput.value = "";
 
-            if (guess.length !== 1 || guessedLetters.includes(guess)) {
+            if (guess.length !== 1 || guessedLetters.includes(guess) || !/^[a-z]$/.test(guess)) {
                 document.getElementById("message").innerText = "Enter a new letter!";
                 return;
             }
@@ -391,6 +701,7 @@
             guessedLetters.push(guess);
 
             if (chosenWord.includes(guess)) {
+                correctSound.play();
                 for (let i = 0; i < chosenWord.length; i++) {
                     if (chosenWord[i] === guess) {
                         displayWord[i] = guess;
@@ -398,6 +709,7 @@
                 }
                 document.getElementById("wordDisplay").innerText = displayWord.join(" ");
             } else {
+                incorrectSound.play();
                 wrongGuesses++;
                 document.getElementById("wrongGuesses").innerText = wrongGuesses;
                 document.getElementById("wrongLetters").innerText += guess + " ";
@@ -410,20 +722,41 @@
         function checkGameStatus() {
             if (!displayWord.includes("_")) {
                 document.getElementById("message").innerText = "Congratulations, Partner! You won!";
-                endGame();
+                endGame(true);
             } else if (wrongGuesses >= maxGuesses) {
                 document.getElementById("message").innerText = "Game Over, Partner! The word was " + chosenWord;
-                endGame();
+                endGame(false);
             }
         }
 
-        function endGame() {
+        function endGame(won) {
             document.getElementById("guessInput").disabled = true;
             document.getElementById("resetButton").style.display = "inline-block";
+            let backgroundMusic = document.getElementById("backgroundMusic");
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+            if (won) {
+                winSound.play();
+            } else {
+                loseSound.play();
+            }
         }
 
         function resetGame() {
+            let backgroundMusic = document.getElementById("backgroundMusic");
+            backgroundMusic.currentTime = 0;
+            backgroundMusic.play().catch((error) => {
+                console.error("Background music playback failed:", error);
+            });
             initializeGame();
+        }
+
+        function goHome() {
+            document.getElementById("gamePage").style.display = "none";
+            document.getElementById("startPage").style.display = "flex";
+            let backgroundMusic = document.getElementById("backgroundMusic");
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
         }
 
         const canvas = document.getElementById("hangmanCanvas");
@@ -436,12 +769,12 @@
             ctx.strokeStyle = "#8b4513";
             ctx.lineWidth = 4;
             ctx.beginPath();
-            ctx.moveTo(10, 490);
-            ctx.lineTo(390, 490); // Base
-            ctx.moveTo(60, 490);
+            ctx.moveTo(10, canvas.height - 10);
+            ctx.lineTo(canvas.width - 10, canvas.height - 10); // Base
+            ctx.moveTo(60, canvas.height - 10);
             ctx.lineTo(60, 20); // Vertical Pole
-            ctx.lineTo(300, 20); // Horizontal Beam
-            ctx.lineTo(300, 70); // Rope Drop
+            ctx.lineTo(canvas.width - 100, 20); // Horizontal Beam
+            ctx.lineTo(canvas.width - 100, 70); // Rope Drop
             ctx.stroke();
         }
 
@@ -451,41 +784,42 @@
             switch (wrongGuesses) {
                 case 1:
                     ctx.beginPath();
-                    ctx.arc(300, 100, 30, 0, Math.PI * 2); // Head
+                    ctx.arc(canvas.width - 100, 100, 30, 0, Math.PI * 2); // Head
                     ctx.stroke();
                     break;
                 case 2:
                     ctx.beginPath();
-                    ctx.moveTo(300, 130);
-                    ctx.lineTo(300, 250); // Body
+                    ctx.moveTo(canvas.width - 100, 130);
+                    ctx.lineTo(canvas.width - 100, 250); // Body
                     ctx.stroke();
                     break;
                 case 3:
                     ctx.beginPath();
-                    ctx.moveTo(300, 150);
-                    ctx.lineTo(260, 200); // Left Arm
+                    ctx.moveTo(canvas.width - 100, 150);
+                    ctx.lineTo(canvas.width - 140, 200); // Left Arm
                     ctx.stroke();
                     break;
                 case 4:
                     ctx.beginPath();
-                    ctx.moveTo(300, 150);
-                    ctx.lineTo(340, 200); // Right Arm
+                    ctx.moveTo(canvas.width - 100, 150);
+                    ctx.lineTo(canvas.width - 60, 200); // Right Arm
                     ctx.stroke();
                     break;
                 case 5:
                     ctx.beginPath();
-                    ctx.moveTo(300, 250);
-                    ctx.lineTo(260, 320); // Left Leg
+                    ctx.moveTo(canvas.width - 100, 250);
+                    ctx.lineTo(canvas.width - 140, 320); // Left Leg
                     ctx.stroke();
                     break;
                 case 6:
                     ctx.beginPath();
-                    ctx.moveTo(300, 250);
-                    ctx.lineTo(340, 320); // Right Leg
+                    ctx.moveTo(canvas.width - 100, 250);
+                    ctx.lineTo(canvas.width - 60, 320); // Right Leg
                     ctx.stroke();
                     break;
             }
         }
     </script>
 </body>
+
 </html>

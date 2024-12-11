@@ -6,39 +6,90 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retro Game Corp.</title>
-    <meta name="description" content="This is my website. There are many like it, but this one is mine.">
     <link rel="stylesheet" href="style.css">
     <script src="https://kit.fontawesome.com/495e77886d.js" crossorigin="anonymous"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
-    <!--Hamburger Menu and Navbar-->
-    <nav>
-        <div class="menu-icon">
+    <nav id="index_nav">
+        <!--Hamburger Menu and Navbar-->
+        <div class="menu-icon" id="index_hamburger">
             <i class="fas fa-bars"></i>
         </div>
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="allGames.html">All Games</a></li>
-            <!-- <li><a href="browseGenre.html">Browse By Genre</a></li> -->
+        </ul>
+        <!--Title-->
+        <h1 id="index_title"><a href="index.html">Retro Game Corp.</a></h1>
+        <ul class="nav-links">
+            <li><a href="news.html">News</a></li>
             <li><a class="nc" href="aboutUs.html">About Us</a></li>
         </ul>
     </nav>
 
-<main>
+    <nav>
+        <div class="hidden_nav">
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="allGames.html">All Games</a></li>
+                <li><a href="news.html">News</a></li>
+                <li><a class="nc" href="aboutUs.html">About Us</a></li>
+            </ul>
+        </div>
+    </nav>
 
-    <p id="gameP">
-        <iframe id="gameFrame" title="gameFrame" scrolling="no">
-        </iframe>
-    </p>
-  
-</main>
+    <main>
+
+        <p id="gameP">
+            <iframe id="gameFrame" title="gameFrame" scrolling="no">
+            </iframe>
+        </p>
+
+    </main>
+
+    <!-- Sidebar -->
+    <aside class="news-sidebar">
+        <h3><a href="news.html">Latest News</a></h3>
+        <ul>
+            <li><a href="https://www.polygon.com/impressions/492240/overthrown-pc-game-review-impressions">Finally, a
+                    crafting game that solves the early game tree-punching problem</a></li>
+            <li><a href="https://www.polygon.com/gaming/492791/itch-io-funko-takedown">itch.io says it was taken down by
+                    Funko</a></li>
+            <li><a
+                    href="https://www.eurogamer.net/indiana-jones-and-the-great-circle-first-update-adds-full-ray-tracing-on-pc">Indiana
+                    Jones and the Great Circle first update adds full ray tracing on PC</a></li>
+            <li><a
+                    href="https://www.ign.com/articles/cyberpunk-2077-gets-surprise-update-22-cd-projekt-still-has-some-gas-in-the-tank">Cyberpunk
+                    2077 Gets Surprise Update 2.2</a></li>
+            <li><a href="https://www.ign.com/articles/the-game-awards-2024-complete-list-of-nominees-goty">Game of the
+                    Year: Which of the 2024 Game Award nominees will win?</a></li>
+            <li><a
+                    href="https://www.pcgamer.com/software/platforms/five-new-steam-games-you-probably-missed-december-9-2024/">Five
+                    new Steam games you probably missed</a></li>
+            <li><a href="https://www.eurogamer.net/microsoft-flight-simulator-2024-review">Microsoft Flight Simulator
+                    2024 review - a stunning achievement made even better</a>
+            </li>
+            <li><a href="https://www.eurogamer.net/indie-retro-rpg-chained-echoes-is-getting-dlc-next-year">Indie retro
+                    RPG Chained Echoes is getting DLC next year</a></li>
+            <li><a href="https://www.eurogamer.net/how-playstation-propelled-tekken-into-the-big-time">How PlayStation
+                    propelled Tekken into the big time</a></li>
+            <li><a href="https://www.eurogamer.net/infinity-nikki-has-topped-10-million-downloads-in-just-four-days">Infinity
+                    Nikki has topped 10 million downloads in just four days</a></li>
+        </ul>
+    </aside>
 
     <!--Footer-->
-    <footer>
-        &#169; NoCookiesAllowed 2024
-    </footer>
+    <div class="foot_container">
+        <footer>
+            &#169; NoCookiesAllowed 2024
+        </footer>
+    </div>
 
     <!-- Link to JavaScript file -->
     <script src="script.js"></script>
